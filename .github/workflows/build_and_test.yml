@@ -14,9 +14,9 @@ jobs:
     steps:
     - uses: actions/checkout@master
     - name: configure
-      run: cmake .
+      run: cmake -DBUILD_TYPE=${{ matrix.build_type }} .
     - name: build
-      run: cmake -DBUILD_TYPE=${{ matrix.build_type }} --build .
+      run: cmake --build . --config ${{ matrix.build_type }}
     - name: test
       run: ctest -C ${{ matrix.build_type }}
 
