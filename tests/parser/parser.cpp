@@ -2285,3 +2285,70 @@ TEST(Parser, importComponentMadeConcrete)
     EXPECT_FALSE(model->component("childComponent")->isImport());
     EXPECT_FALSE(model->component("parentComponent")->isImport());
 }
+
+TEST(Parser, resetsWithTestAndRestValues)
+{
+    const std::string e =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        "<model xmlns=\"http://www.cellml.org/cellml/2.0#\" name=\"testModel\">\n"
+        "  <units name=\"units1\"/>\n"
+        "  <component name=\"testComponent1\">\n"
+        "    <variable name=\"variable1\" units=\"units1\"/>\n"
+        "    <variable name=\"variable2\" units=\"units1\"/>\n"
+        "    <reset variable=\"variable1\" test_variable=\"variable2\" order=\"5\">\n"
+        "      <test_value>56</test_value>\n"
+        "      <reset_value>65</reset_value>\n"
+        "    </reset>\n"
+        "  </component>\n"
+        "</model>\n";
+
+    // Setting up model
+    auto m = libcellml::Model::create();
+    auto p = libcellml::Printer::create();
+    m->setName("testModel");
+    auto componentParent = libcellml::Component::create();
+    componentParent->setName("testComponent1");
+    m->addComponent(componentParent);
+    auto units = libcellml::Units::create();
+    auto unitsName = "units1";
+    units->setName(unitsName);
+    m->addUnits(units);
+    auto var1 = libcellml::Variable::create();
+    var1->setName("variable1");
+    var1->setUnits(unitsName);
+    auto var2 = libcellml::Variable::create();
+    var2->setName("variable2");
+    var2->setUnits(unitsName);
+    componentParent->addVariable(var1);
+    componentParent->addVariable(var2);
+
+    // Setting up Reset
+    auto newReset = libcellml::Reset::create();
+    newReset->setVariable(var1);
+    newReset->setOrder(5);
+    newReset->setTestVariable(var2);
+    newReset->setResetValue("65");
+    newReset->setTestValue("56");
+
+    EXPECT_EQ("56", newReset->testValue());
+    EXPECT_EQ("65", newReset->resetValue());
+
+    componentParent->addReset(newReset);
+    m->replaceComponent("testComponent1", componentParent, true);
+
+    auto c = m->component("testComponent1", true);
+    EXPECT_EQ("56", c->reset(0)->testValue());
+    EXPECT_EQ("65", c->reset(0)->resetValue());
+
+    // Print and Parse
+    auto printed = p->printModel(m);
+    EXPECT_EQ(e, printed);
+
+    auto parser = libcellml::Parser::create();
+    auto parsedModel = parser->parseModel(printed);
+    auto testComp = parsedModel->component("testComponent1", true);
+
+    EXPECT_EQ("testComponent1", testComp->name());
+    EXPECT_EQ("56", testComp->reset(0)->testValue());
+    EXPECT_EQ("65", testComp->reset(0)->resetValue());
+}
