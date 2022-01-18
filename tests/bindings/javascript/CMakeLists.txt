@@ -14,8 +14,16 @@
 
 set(TEST_SRCS
   analyser.test.js
+  component.test.js
+  componententity.test.js
+  entity.test.js
   generatorprofile.test.js
   model.test.js
+  namedentity.test.js
+  parentedentity.test.js
+  parser.test.js
+  reset.test.js
+  units.test.js
   validator.test.js
   version.test.js
 )
@@ -32,7 +40,7 @@ set(TEST_PACKAGE_JSON "{
   \"description\": \"Tests for libcellml.js\",
   \"main\": \"index.js\",
   \"scripts\": {
-    \"test\": \"jest\"
+    \"test\": \"jest --detectOpenHandles\"
   },
   \"author\": \"\",
   \"license\": \"Apache-2.0\",

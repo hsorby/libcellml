@@ -169,13 +169,15 @@ static const std::map<Issue::ReferenceRule, std::vector<std::string>> ruleToInfo
     {Issue::ReferenceRule::INVALID_ARGUMENT, {"INVALID_ARGUMENT", "", docsUrl, ""}},
 
     // Importer class issues:
-    {Issue::ReferenceRule::IMPORTER_NULL_MODEL, {"IMPORTER_NULL_MODEL", "", docsUrl, ""}},
+    {Issue::ReferenceRule::IMPORTER_ERROR_IMPORTING_UNITS, {"IMPORTER_ERROR_IMPORTING_UNITS", "", docsUrl, ""}},
     {Issue::ReferenceRule::IMPORTER_MISSING_FILE, {"IMPORTER_MISSING_FILE", "", docsUrl, ""}},
     {Issue::ReferenceRule::IMPORTER_MISSING_COMPONENT, {"IMPORTER_MISSING_COMPONENT", "", docsUrl, ""}},
     {Issue::ReferenceRule::IMPORTER_MISSING_UNITS, {"IMPORTER_MISSING_UNITS", "", docsUrl, ""}},
+    {Issue::ReferenceRule::IMPORTER_NULL_MODEL, {"IMPORTER_NULL_MODEL", "", docsUrl, ""}},
 
     // Analyser issues:
     {Issue::ReferenceRule::ANALYSER_UNITS, {"ANALYSER_UNITS", "", docsUrl, ""}},
+    {Issue::ReferenceRule::ANALYSER_UNLINKED_UNITS, {"ANALYSER_UNLINKED_UNITS", "", docsUrl, ""}},
     {Issue::ReferenceRule::ANALYSER_VARIABLE_INITIALISED_MORE_THAN_ONCE, {"ANALYSER_VARIABLE_INITIALISED_MORE_THAN_ONCE", "", docsUrl, ""}},
     {Issue::ReferenceRule::ANALYSER_VARIABLE_NON_CONSTANT_INITIALISATION, {"ANALYSER_VARIABLE_NON_CONSTANT_INITIALISATION", "", docsUrl, ""}},
     {Issue::ReferenceRule::ANALYSER_VOI_INITIALISED, {"ANALYSER_VOI_INITIALISED", "", docsUrl, ""}},
