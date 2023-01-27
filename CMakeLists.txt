@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set(CMAKE_OSX_DEPLOYMENT_TARGET 10.15.1)
+set(CMAKE_OSX_DEPLOYMENT_TARGET 10.15.1 CACHE STRING "Minimum OS X deployment version.")
 
 cmake_minimum_required(VERSION 3.18.0)
 
