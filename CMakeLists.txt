@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set(CMAKE_OSX_DEPLOYMENT_TARGET 10.15.1)
+
 cmake_minimum_required(VERSION 3.18.0)
 
 set(PROJECT_NAME libCellML)
