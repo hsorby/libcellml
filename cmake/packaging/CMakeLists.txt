@@ -7,15 +7,6 @@ set(CPACK_PACKAGE_VERSION "${LIBCELLML_PACKAGE_VERSION}")
 get_system_name(LIBCELLML_SYSTEM)
 string(TOLOWER ${LIBCELLML_SYSTEM} LIBCELLML_SYSTEM_LOWERCASE)
 
-set(LIBCELLML_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
-if(WIN32)
-  if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-    set(LIBCELLML_ARCHITECTURE x86)
-  else()
-    set(LIBCELLML_ARCHITECTURE x64)
-  endif()
-endif()
-
 if(WIN32)
   set(CPACK_GENERATOR "ZIP")
   set(CPACK_NSIS_DISPLAY_NAME "${PROJECT_NAME}")
@@ -42,7 +33,6 @@ elseif(APPLE)
 
   set(CPACK_RESOURCE_FILE_WELCOME "${CMAKE_CURRENT_SOURCE_DIR}/distrib/macos/welcome.txt")
 
-  set(LIBCELLML_ARCHITECTURE "universal")
   set(CPACK_GENERATOR "TGZ" "productbuild")
 elseif(UNIX)
   # Preserve the CMAKE_INSTALL_PREFIX for the project and work with absolute install

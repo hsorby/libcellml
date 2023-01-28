@@ -73,6 +73,36 @@ else ()
   find_package(Sphinx)
   find_package(SWIG 3)
 
+  # Determine deployment architectures.
+  if(APPLE)
+    # On macOS "uname -m" returns the architecture (x86_64 or arm64).
+    execute_process(
+      COMMAND uname -m
+      RESULT_VARIABLE result
+      OUTPUT_VARIABLE _OSX_NATIVE_ARCHITECTURE
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+
+    # Determine if we do universal build or native build.
+    if(_OSX_NATIVE_ARCHITECTURE STREQUAL "arm64")
+      set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "")
+      set(LIBCELLML_ARCHITECTURE "universal")
+      message(STATUS "macOS universal (x86_64 / arm64) build")
+    else()
+      set(CMAKE_OSX_ARCHITECTURES "${_OSX_NATIVE_ARCHITECTURE}" CACHE STRING "")
+      set(LIBCELLML_ARCHITECTURE "${_OSX_NATIVE_ARCHITECTURE}")
+      message(STATUS "macOS native ${_OSX_NATIVE_ARCHITECTURE} build")
+    endif()
+  elseif(WIN32)
+    if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+      set(LIBCELLML_ARCHITECTURE x86)
+    else()
+      set(LIBCELLML_ARCHITECTURE x64)
+    endif()
+  else()
+    set(LIBCELLML_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
+  endif()
+
   set(_ORIGINAL_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
 
   set(CMAKE_REQUIRED_FLAGS -fprofile-instr-generate)
