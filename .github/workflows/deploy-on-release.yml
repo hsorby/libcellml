@@ -43,7 +43,8 @@ jobs:
           endforeach()
         endif()
         message(STATUS "Setting binaries destination to '${_OUTPUT_LOCATION}'.")
-        file(APPEND $ENV{GITHUB_OUTPUT} "binaries-destination=${_OUTPUT_LOCATION}")
+        #file(APPEND $ENV{GITHUB_OUTPUT} "binaries-destination=${_OUTPUT_LOCATION}")
+        file(APPEND $ENV{GITHUB_OUTPUT} "binaries-destination=Neither")
 
     - name: Determine next jobs
       id: do-jobs
@@ -254,13 +255,11 @@ jobs:
         endif()
 
         file(GLOB _DIST_FILES ${ACTION_DIR}/build/dist/*)
-        # softprops action requires a list of newline separated files.
-        # The %0A will be converted by GitHub actions into '\n'.
-        string(REPLACE ";" "%0A" _DIST_FILES "${_DIST_FILES}")
-        file(APPEND $ENV{GITHUB_OUTPUT} "files=${_DIST_FILES}")
+        string(REPLACE ";" "\n" _DIST_FILES "${_DIST_FILES}")
+        file(APPEND $ENV{GITHUB_OUTPUT} "files<<EOF\n${_DIST_FILES}\nEOF")
 
     - name: Publish libraries
-      if: needs.setup-jobs.outputs.binaries-destination == 'Publish'
+      # if: needs.setup-jobs.outputs.binaries-destination == 'Publish'
       uses: softprops/action-gh-release@v1
       with:
         files: ${{ steps.package.outputs.files }}
@@ -271,181 +270,3 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         path: ./build/dist/*
-
-  wheels:
-    needs: setup-jobs
-    if: needs.setup-jobs.outputs.allowed-jobs == 'Wheels' || needs.setup-jobs.outputs.allowed-jobs == 'All'
-    name: ${{ matrix.name }} ${{ matrix.py }} wheels
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-12, ubuntu-20.04, windows-2019]
-        py: ['3.7', '3.8', '3.9', '3.10', '3.11']
-        include:
-          - name: 'Windows'
-            os: windows-2019
-          - name: 'Linux'
-            os: ubuntu-20.04
-          - name: 'macOS'
-            os: macos-12
-        exclude:
-          - os: macos-12
-            py: '3.7'
-
-    steps:
-      - name: Check out libCellML
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.release.tag_name }}
-
-      - name: Setup for cibuildwheel
-        id: setup
-        shell: bash
-        run: |
-          mkdir src/bindings/python/libcellml
-          cp src/bindings/python/README.rst src/bindings/python/libcellml/README.rst
-          mv src/bindings/python/cibuildwheel.setup.py src/bindings/python/setup.py
-          v=${{ matrix.py }}
-          echo "Setting tag as: tag=${GITHUB_REF#refs/tags/}"
-          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-          echo "Setting build as: build=cp${v/./}-*"
-          echo "build=cp${v/./}-*" >> $GITHUB_OUTPUT
-          if [[ "macOS" == "${{ matrix.name }}" ]]; then
-            if [[ "${{ matrix.py }}" == "3.8" ]]; then
-              echo "Setting macos_archs as: macos_archs='x86_64'"
-              echo "macos_archs=x86_64" >> $GITHUB_OUTPUT
-            else
-              echo "Setting macos_archs as: macos_archs='x86_64 arm64'"
-              echo 'MACOS_ARCHS=x86_64 arm64' >> $GITHUB_OUTPUT
-            fi
-          else
-            echo "Setting macos_archs as: macos_archs='x86_64'"
-            echo "macos_archs=x86_64" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Configure MSVC
-        if: runner.os == 'Windows'
-        uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
-
-      - name: Install cibuildwheel
-        run: python -m pip install cibuildwheel==2.11.2
-
-      - name: Build wheels
-        run: python -m cibuildwheel --output-dir wheelhouse src/bindings/python/
-        env:
-          #CIBW_BUILD_VERBOSITY: 1
-          CIBW_ARCHS: auto64
-          CIBW_ARCHS_MACOS: ${{ steps.setup.outputs.macos_archs }}
-          CIBW_BUILD: ${{ steps.setup.outputs.build }}
-          CIBW_TEST_SKIP: "*_arm64"
-          CIBW_BEFORE_ALL_LINUX: yum install -y libxml2-devel || (apk add libxml2-dev && rm /usr/lib/cmake/libxml2/libxml2-config.cmake)
-          CIBW_BEFORE_ALL_WINDOWS: cd src/bindings/python && cmake -S wheel_dependencies -B build-wheel_dependencies -G Ninja && cd build-wheel_dependencies && ninja
-          CIBW_ENVIRONMENT: LIBCELLML_VERSION_TAG=${{ steps.setup.outputs.tag }}
-          CIBW_ENVIRONMENT_MACOS: >
-            MACOSX_DEPLOYMENT_TARGET=10.15
-            LIBCELLML_VERSION_TAG=${{ steps.setup.outputs.tag }}
-          CIBW_REPAIR_WHEEL_COMMAND_MACOS: ""
-          CIBW_BEFORE_BUILD_LINUX: pip install renamewheel
-          CIBW_REPAIR_WHEEL_COMMAND_LINUX: renamewheel -w {dest_dir} {wheel}
-
-      - name: Upload Python wheels as artifacts
-        if: needs.setup-jobs.outputs.binaries-destination == 'Artifact'
-        uses: actions/upload-artifact@v3
-        with:
-          path: ./wheelhouse/*.whl
-
-      - name: Publish Python wheels
-        if: needs.setup-jobs.outputs.binaries-destination == 'Publish'
-        shell: bash
-        env:
-          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-        run: |
-          python -m pip install twine
-          twine upload --skip-existing ./wheelhouse/*.whl
-
-
-  emscripten:
-    needs: setup-jobs
-    if: needs.setup-jobs.outputs.allowed-jobs == 'Javascript' || needs.setup-jobs.outputs.allowed-jobs == 'All'
-    name: libcellml.js
-    runs-on: macos-12
-    steps:
-      - name: Checkout libCellML
-        uses: actions/checkout@v3
-        with:
-          path: libcellml
-          ref: ${{ github.event.release.tag_name }}
-
-      - name: Checkout zlib
-        uses: actions/checkout@v3
-        with:
-          repository: OpenCMISS-Dependencies/zlib
-          path: zlib
-          ref: v1.2.3
-
-      - name: Checkout LibXml2
-        uses: actions/checkout@v3
-        with:
-          repository: OpenCMISS-Dependencies/libxml2
-          path: libxml2
-          ref: v2.9.10
-
-      - name: Instal emscripten
-        shell: bash
-        run: |
-          brew install emscripten
-
-      - name: Build and instal zlib
-        shell: bash
-        run: |
-          mkdir build-zlib-release
-          cd build-zlib-release
-          emcmake cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/usr/local ../zlib/
-          make -j3 install
-
-      - name: Build and instal libXml2
-        shell: bash
-        run: |
-          mkdir build-libxml2-release
-          cd build-libxml2-release
-          emcmake cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/usr/local -DZLIB_DIR=${GITHUB_WORKSPACE}/usr/local/lib/cmake/ZLIB-1.2.3/ -DCMAKE_PREFIX_PATH=${GITHUB_WORKSPACE}/usr/local -DBUILD_SHARED_LIBS=OFF -DLIBXML2_WITH_ICONV=OFF -DLIBXML2_WITH_LZMA=OFF -DLIBXML2_WITH_PYTHON=OFF -DLIBXML2_WITH_TESTS=OFF -DLIBXML2_WITH_PROGRAMS=OFF ../libxml2/
-          make -j3 install
-
-      - name: Build libcellml.js
-        shell: bash
-        run: |
-          mkdir build-libcellml-release
-          cd build-libcellml-release
-          emcmake cmake -DLibXml2_DIR=${GITHUB_WORKSPACE}/usr/local/lib/cmake/libxml2-2.9.10/ -DZLIB_DIR=${GITHUB_WORKSPACE}/usr/local/lib/cmake/ZLIB-1.2.3/ -DBUILD_TYPE=Release ../libcellml/
-          make VERBOSE=1 -j3
-
-      - name: Pack libcellml.js
-        id: package-javascript
-        shell: bash
-        run: |
-          cd build-libcellml-release/src/bindings/javascript
-          npm pack
-          package=`ls $PWD/libcellml.js-*.tgz`
-          echo "files=$package" >> $GITHUB_OUTPUT
-
-      - name: Upload libcellml.js as artifacts
-        if: needs.setup-jobs.outputs.binaries-destination == 'Artifact'
-        uses: actions/upload-artifact@v3
-        with:
-          path: ${{ steps.package-javascript.outputs.files }}
-
-      - name: Publish libcellml.js
-        if: needs.setup-jobs.outputs.binaries-destination == 'Publish'
-        shell: bash
-        env:
-          NPM_TOKEN: ${{secrets.NPM_TOKEN}}
-        run: |
-          cd build-libcellml-release/src/bindings/javascript
-          npm publish --access public
