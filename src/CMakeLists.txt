@@ -33,15 +33,6 @@ configure_file(
   ${LIBCELLML_VERSIONCONFIG_H}
 )
 
-set(LIBCELLML_PRIVATECONFIG_IN_H "${CMAKE_CURRENT_SOURCE_DIR}/configure/libcellmlconfig_p.in.h")
-set(LIBCELLML_PRIVATECONFIG_H "${CMAKE_CURRENT_BINARY_DIR}/libcellmlconfig_p.h")
-if(MSVC)
-  set(UNCOMPRESS_SIZE_TYPE "unsigned long")
-else()
-  set(UNCOMPRESS_SIZE_TYPE "size_t")
-endif()
-configure_file(${LIBCELLML_PRIVATECONFIG_IN_H} ${LIBCELLML_PRIVATECONFIG_H})
-
 list(APPEND CLEAN_FILES ${LIBCELLML_VERSIONCONFIG_H} ${LIBCELLML_EXPORTDEFINITIONS_H})
 
 set(SOURCE_FILES
@@ -113,6 +104,7 @@ set(GIT_API_HEADER_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/api/libcellml/reset.h
   ${CMAKE_CURRENT_SOURCE_DIR}/api/libcellml/strict.h
   ${CMAKE_CURRENT_SOURCE_DIR}/api/libcellml/types.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/api/libcellml/undefines.h
   ${CMAKE_CURRENT_SOURCE_DIR}/api/libcellml/units.h
   ${CMAKE_CURRENT_SOURCE_DIR}/api/libcellml/validator.h
   ${CMAKE_CURRENT_SOURCE_DIR}/api/libcellml/variable.h
@@ -163,7 +155,6 @@ set(GIT_HEADER_FILES
 
 set(HEADER_FILES
   ${GIT_HEADER_FILES}
-  ${LIBCELLML_PRIVATECONFIG_H}
   ${LIBCELLML_VERSIONCONFIG_H}
 )
 
@@ -210,7 +201,7 @@ else()
   target_compile_definitions(cellml PUBLIC ${LIBXML2_DEFINITIONS})
 endif()
 
-# Use target compile features to propogate features to consuming projects.
+# Use target compile features to propagate features to consuming projects.
 target_compile_features(cellml PUBLIC cxx_std_17)
 
 set_target_properties(cellml PROPERTIES
@@ -243,6 +234,7 @@ target_include_directories(cellml_debug_utilities
 set_target_properties(cellml_debug_utilities PROPERTIES
   CXX_VISIBILITY_PRESET hidden
   DEBUG_POSTFIX d
+  POSITION_INDEPENDENT_CODE 1
   VISIBILITY_INLINES_HIDDEN 1
 )
 
@@ -383,7 +375,6 @@ set(API_HEADER_FILES ${GIT_API_HEADER_FILES} PARENT_SCOPE)
 set(MODULE_HEADER_FILES ${MODULE_HEADER_FILES} PARENT_SCOPE)
 set(HEADER_FILES ${GIT_HEADER_FILES} PARENT_SCOPE)
 set(GENERATED_HEADER_FILES
-  ${LIBCELLML_PRIVATECONFIG_H}
   ${LIBCELLML_VERSIONCONFIG_H}
   PARENT_SCOPE
 )
