@@ -102,7 +102,7 @@ public:
      *
      * Checks whether this XmlAttribute has the argument attribute type name in
      * the CellML 2.0 namespace.
-     * Returns @ true if so, and @c false otherwise.
+     * Returns @c true if so, and @c false otherwise.
      *
      * @param name The @c char attribute type name to check for.
      *
@@ -147,6 +147,17 @@ public:
      * Remove this XmlAttribute from its parent XmlNode.
      */
     void removeAttribute();
+
+    /**
+     * @brief Set the namespace prefix for this XmlAttribute.
+     *
+     * Set the namespace prefix for this XmlAttribute.
+     * The existing attribute is removed and replaced with an attribute that has the
+     * same value and the given namespace prefix.
+     *
+     * @param prefix A @c std::string representation of the XML namespace prefix.
+     */
+    void setNamespacePrefix(const std::string &prefix);
 
 private:
     struct XmlAttributeImpl; /**< Forward declaration for pImpl idiom, @private. */

@@ -53,6 +53,20 @@ set(TEST_EXPORTDEFINITIONS_H "${CMAKE_CURRENT_BINARY_DIR}/test_exportdefinitions
 set(TEST_UTILS_SRC ${CMAKE_CURRENT_SOURCE_DIR}/test_utils.cpp)
 set(TEST_UTILS_HDR ${CMAKE_CURRENT_SOURCE_DIR}/test_utils.h)
 
+if(NOT DEFINED LIBXML2_VERSION_STRING)
+  set(LIBXML2_VERSION_STRING "2.9.10")
+elseif(LIBXML2_VERSION_STRING VERSION_GREATER_EQUAL "2.9.13")
+  set(LIBXML2_VERSION_STRING "2.9.13")
+elseif(LIBXML2_VERSION_STRING VERSION_GREATER_EQUAL "2.9.11")
+  set(LIBXML2_VERSION_STRING "2.9.11")
+endif()
+
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/libxml2issues.${LIBXML2_VERSION_STRING}.h
+  ${CMAKE_CURRENT_BINARY_DIR}/libxml2issues.h
+  COPYONLY
+)
+
 add_library(test_utils SHARED ${TEST_UTILS_SRC} ${TEST_UTILS_HDR} ${TEST_EXPORTDEFINITIONS_H})
 target_link_libraries(test_utils PUBLIC cellml gtest)
 target_include_directories(test_utils PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
@@ -110,6 +124,9 @@ foreach(TEST ${LIBCELLML_TESTS})
   unset(CURRENT_CATEGORY)
 endforeach()
 
+set(ALL_LIBRARY_SOURCE_FILES ${SOURCE_FILES} ${API_HEADER_FILES} ${MODULE_HEADER_FILES} ${GENERATED_HEADER_FILES} ${HEADER_FILES})
+add_test(NAME are_debug_utilities_used COMMAND ${CMAKE_COMMAND} -P ${CMAKE_SOURCE_DIR}/cmake/checkfordebugheaderusage.cmake ${ALL_LIBRARY_SOURCE_FILES})
+
 # Generate tests for header files.
 include(api_headers/tests.cmake)
 
@@ -129,9 +146,6 @@ if(LIBCELLML_COVERAGE)
     DEPENDS clean_coverage ${TEST_LIST}
     COMMAND ${CMAKE_CTEST_COMMAND} > /dev/null
     COMMENT "Prepare for coverage tests")
-    if(TARGET python_bindings)
-      add_dependencies(prepare_coverage python_bindings)
-    endif()
 
   add_custom_target(coverage
     COMMAND ${Python_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/gcovr-4.1.1.zip -r ${GCOV_PREFIX_PATH} --gcov-executable=${GCOV_EXE} ${GCOV_ANALYSIS_PATH}
@@ -176,7 +190,7 @@ if(LIBCELLML_LLVM_COVERAGE)
     COMMENT "Running LLVM coverage tests")
 
   add_custom_target(llvm_coverage_report
-    COMMAND ${LLVM_COV_EXE} show $<TARGET_FILE:cellml> -instr-profile=${DATA_PROFILE_FILENAME} -format=html -Xdemangler c++filt -Xdemangler -n -o coverage_report
+    COMMAND ${LLVM_COV_EXE} show $<TARGET_FILE:cellml> -instr-profile=${DATA_PROFILE_FILENAME} -format=html -Xdemangler c++filt -Xdemangler -n -o coverage_report --show-expansions --show-branches=count
     DEPENDS prepare_llvm_coverage
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     COMMENT "Running LLVM coverage missing lines command")

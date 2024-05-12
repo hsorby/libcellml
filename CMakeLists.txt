@@ -12,33 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.10.2)
+cmake_minimum_required(VERSION 3.18.0)
+
+set(CMAKE_OSX_DEPLOYMENT_TARGET 10.15 CACHE STRING "Minimum OS X deployment version.")
 
 set(PROJECT_NAME libCellML)
 set(PROJECT_URL https://libcellml.org)
-set(_PROJECT_VERSION 0.3.99)
+set(_PROJECT_VERSION 0.5.0)
 set(PROJECT_DEVELOPER_VERSION )
 project(${PROJECT_NAME} VERSION ${_PROJECT_VERSION} LANGUAGES CXX)
 
 # Set policies that affect the build.
-if(POLICY CMP0056)
-  cmake_policy(SET CMP0056 NEW)
-endif()
-if(POLICY CMP0063)
-  cmake_policy(SET CMP0063 NEW)
-endif()
-if(POLICY CMP0074)
-  cmake_policy(SET CMP0074 NEW)
-endif()
-if(POLICY CMP0078)
-  cmake_policy(SET CMP0078 NEW)
-endif()
-if(POLICY CMP0086)
-  cmake_policy(SET CMP0086 NEW)
-endif()
-if(POLICY CMP0092)
-  cmake_policy(SET CMP0092 NEW)
-endif()
+set(NEW_POLICIES CMP0056 CMP0063 CMP0074 CMP0078 CMP0086 CMP0092)
+foreach(NEW_POLICY ${NEW_POLICIES})
+  if(POLICY ${NEW_POLICY})
+    cmake_policy(SET ${NEW_POLICY} NEW)
+  endif()
+endforeach()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -117,7 +107,7 @@ set(_PARAM_ANNOTATION "Build Python wrappers.")
 if(BINDINGS_AVAILABLE AND PYTHON_BINDINGS_AVAILABLE)
   set(LIBCELLML_BINDINGS_PYTHON ON CACHE BOOL "${_PARAM_ANNOTATION}")
 endif()
-if(DEFINED BINDINGS_PYTHON AND BINDINGS_AVAILABLE AND Python_Development_FOUND)
+if(DEFINED BINDINGS_PYTHON AND BINDINGS_AVAILABLE AND PYTHON_BINDINGS_AVAILABLE)
   set(LIBCELLML_BINDINGS_PYTHON "${BINDINGS_PYTHON}" CACHE BOOL "${_PARAM_ANNOTATION}" FORCE)
 elseif(BINDINGS_PYTHON)
   message(WARNING "Python bindings requested but development files for Python or SWIG were not found!")
@@ -206,7 +196,7 @@ endif()
 
 # ENABLE_UTILITIES ==> LIBCELLML_ENABLE_UTILITIES
 set(_PARAM_ANNOTATION "Enable the utility targets; e.g. create_mathml_dtd_files.")
-if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.18 AND NOT DEFINED EMSCRIPTEN)
+if(NOT DEFINED EMSCRIPTEN)
   set(LIBCELLML_ENABLE_UTILITIES OFF CACHE BOOL "${_PARAM_ANNOTATION}")
   if(DEFINED ENABLE_UTILITIES)
     set(LIBCELLML_ENABLE_UTILITIES ${ENABLE_UTILITIES} CACHE BOOL "${_PARAM_ANNOTATION}" FORCE)
@@ -214,18 +204,6 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.18 AND NOT DEFINED EMSCRIPTEN)
   unset(ENABLE_UTILITIES CACHE)
 else()
   set(LIBCELLML_ENABLE_UTILITIES OFF CACHE INTERNAL "${_PARAM_ANNOTATION}")
-endif()
-
-# If we are treating warnings as errors then remove the /W3 option since it
-# will eventually be replaced with the /W4 and /WX options (see
-# target_warnings_as_errors()).
-# This manipulation can be removed once the minimum version can
-# be lifted to at least version 3.15 because the warning level will not
-# automatically be set.
-if(MSVC AND CMAKE_MINIMUM_REQUIRED_VERSION VERSION_LESS 3.15)
-  if(LIBCELLML_TREAT_WARNINGS_AS_ERRORS)
-    replace_compiler_flag("/W3" "")
-  endif()
 endif()
 
 # If available and wanted, apply compiler cache settings.
@@ -300,4 +278,3 @@ endif()
 # Add target to print out version
 add_custom_target(print_version
   COMMAND ${CMAKE_COMMAND} -E echo "version=v${PROJECT_VERSION}${PROJECT_DEVELOPER_VERSION}")
-

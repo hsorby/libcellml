@@ -18,9 +18,6 @@ limitations under the License.
 
 #include <utility>
 
-#include "libcellml/component.h"
-#include "libcellml/componententity.h"
-
 #include "entity_p.h"
 
 namespace libcellml {
@@ -59,6 +56,7 @@ bool Entity::doEquals(const EntityPtr &other) const
     if (other == nullptr) {
         return false;
     }
+
     return pFunc()->mId == other->id();
 }
 

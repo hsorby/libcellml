@@ -17,7 +17,6 @@ limitations under the License.
 #include "utilities.h"
 
 #include <algorithm>
-#include <array>
 #include <cmath>
 #include <cstring>
 #include <iomanip>
@@ -29,42 +28,68 @@ limitations under the License.
 
 #include "libcellml/component.h"
 #include "libcellml/importsource.h"
-#include "libcellml/issue.h"
-#include "libcellml/logger.h"
 #include "libcellml/model.h"
 #include "libcellml/namedentity.h"
 #include "libcellml/reset.h"
 #include "libcellml/units.h"
 #include "libcellml/variable.h"
 
+#include "commonutils.h"
 #include "xmldoc.h"
 #include "xmlutils.h"
 
 namespace libcellml {
 
-double convertToDouble(const std::string &in, bool *ok)
+static const std::map<std::string, int> standardPrefixList = {
+    {"yotta", 24},
+    {"zetta", 21},
+    {"exa", 18},
+    {"peta", 15},
+    {"tera", 12},
+    {"giga", 9},
+    {"mega", 6},
+    {"kilo", 3},
+    {"hecto", 2},
+    {"deca", 1},
+    {"deci", -1},
+    {"centi", -2},
+    {"milli", -3},
+    {"micro", -6},
+    {"nano", -9},
+    {"pico", -12},
+    {"femto", -15},
+    {"atto", -18},
+    {"zepto", -21},
+    {"yocto", -24}};
+
+bool stringToDouble(const std::string &in, double &out)
 {
-    double out = 0.0;
-    if (ok != nullptr) {
-        *ok = true;
-    }
-
-    if (!isCellMLReal(in)) {
-        if (ok != nullptr) {
-            *ok = false;
-        }
-
-        return out;
-    }
-
     try {
         out = std::stod(in);
     } catch (std::out_of_range &) {
-        if (ok != nullptr) {
-            *ok = false;
-        }
+        return false;
     }
-    return out;
+
+    return true;
+}
+
+bool canConvertToBasicDouble(const std::string &in)
+{
+    if (!isCellMLBasicReal(in)) {
+        return false;
+    }
+
+    double temp;
+    return stringToDouble(in, temp);
+}
+
+bool convertToDouble(const std::string &in, double &out)
+{
+    if (!isCellMLReal(in)) {
+        return false;
+    }
+
+    return stringToDouble(in, out);
 }
 
 bool hasNonWhitespaceCharacters(const std::string &input)
@@ -90,6 +115,11 @@ Strings split(const std::string &content, const std::string &delimiter)
 
 std::string convertToString(double value, bool fullPrecision)
 {
+    if (std::isnan(value)) {
+        // Always return "nan" whether we are dealing with +NAN or -NAN. This is to ensure that
+        // the string representation of a NAN is consistent across compilers.
+        return "nan";
+    }
     std::ostringstream strs;
     if (fullPrecision) {
         strs << std::setprecision(std::numeric_limits<double>::digits10) << value;
@@ -99,29 +129,18 @@ std::string convertToString(double value, bool fullPrecision)
     return strs.str();
 }
 
-int convertToInt(const std::string &in, bool *ok)
+bool convertToInt(const std::string &in, int &out)
 {
-    int out = 0;
-    if (ok != nullptr) {
-        *ok = true;
-    }
-
     if (!isCellMLInteger(in)) {
-        if (ok != nullptr) {
-            *ok = false;
-        }
-
-        return out;
+        return false;
     }
 
     try {
         out = std::stoi(in);
     } catch (std::out_of_range &) {
-        if (ok != nullptr) {
-            *ok = false;
-        }
+        return false;
     }
-    return out;
+    return true;
 }
 
 int convertPrefixToInt(const std::string &in, bool *ok)
@@ -135,7 +154,10 @@ int convertPrefixToInt(const std::string &in, bool *ok)
     if (isStandardPrefixName(in)) {
         prefixInt = standardPrefixList.at(in);
     } else if (!in.empty()) {
-        prefixInt = convertToInt(in, ok);
+        bool success = convertToInt(in, prefixInt);
+        if (ok != nullptr) {
+            *ok = success;
+        }
     }
     return prefixInt;
 }
@@ -341,245 +363,6 @@ std::vector<ImportSourcePtr> getAllImportSources(const ModelConstPtr &model)
     return importSources;
 }
 
-// The below code is used to compute the SHA-1 value of a string, based on the
-// code available at https://github.com/vog/sha1.
-
-static const size_t BLOCK_INTS = 16;
-static const size_t BLOCK_BYTES = BLOCK_INTS * 4;
-
-static void bufferToBlock(const std::string &buffer,
-                          std::array<uint32_t, BLOCK_INTS> &block)
-{
-    for (size_t i = 0; i < BLOCK_INTS; ++i) {
-        block.at(i) = (uint32_t(buffer[4 * i + 3]) & 0xffU)
-                      | (uint32_t(buffer[4 * i + 2]) & 0xffU) << 8U
-                      | (uint32_t(buffer[4 * i + 1]) & 0xffU) << 16U
-                      | (uint32_t(buffer[4 * i + 0]) & 0xffU) << 24U;
-    }
-}
-
-static uint32_t rol(const uint32_t value, const size_t bits)
-{
-    return (value << bits) | (value >> (32 - bits));
-}
-
-static uint32_t blk(const std::array<uint32_t, BLOCK_INTS> block,
-                    const size_t i)
-{
-    return rol(block.at((i + 13) & 15U) ^ block.at((i + 8) & 15U) ^ block.at((i + 2) & 15U) ^ block.at(i), 1);
-}
-
-static void r0(const std::array<uint32_t, BLOCK_INTS> block, const uint32_t v,
-               uint32_t &w, const uint32_t x, const uint32_t y, uint32_t &z,
-               const size_t i)
-{
-    z += ((w & (x ^ y)) ^ y) + block.at(i) + 0x5a827999U + rol(v, 5);
-    w = rol(w, 30);
-}
-
-static void r1(std::array<uint32_t, BLOCK_INTS> &block, const uint32_t v,
-               uint32_t &w, const uint32_t x, const uint32_t y, uint32_t &z,
-               const size_t i)
-{
-    block.at(i) = blk(block, i);
-
-    z += ((w & (x ^ y)) ^ y) + block.at(i) + 0x5a827999U + rol(v, 5);
-    w = rol(w, 30);
-}
-
-static void r2(std::array<uint32_t, BLOCK_INTS> &block, const uint32_t v,
-               uint32_t &w, const uint32_t x, const uint32_t y, uint32_t &z,
-               const size_t i)
-{
-    block.at(i) = blk(block, i);
-
-    z += (w ^ x ^ y) + block.at(i) + 0x6ed9eba1U + rol(v, 5);
-    w = rol(w, 30);
-}
-
-static void r3(std::array<uint32_t, BLOCK_INTS> &block, const uint32_t v,
-               uint32_t &w, const uint32_t x, const uint32_t y, uint32_t &z,
-               const size_t i)
-{
-    block.at(i) = blk(block, i);
-
-    z += (((w | x) & y) | (w & x)) + block.at(i) + 0x8f1bbcdcU + rol(v, 5);
-    w = rol(w, 30);
-}
-
-static void r4(std::array<uint32_t, BLOCK_INTS> &block, const uint32_t v,
-               uint32_t &w, const uint32_t x, const uint32_t y, uint32_t &z,
-               const size_t i)
-{
-    block.at(i) = blk(block, i);
-
-    z += (w ^ x ^ y) + block.at(i) + 0xca62c1d6U + rol(v, 5);
-    w = rol(w, 30);
-}
-
-static void transform(std::array<uint32_t, 5> &digest,
-                      std::array<uint32_t, BLOCK_INTS> &block,
-                      uint64_t &transforms)
-{
-    uint32_t a = digest[0];
-    uint32_t b = digest[1];
-    uint32_t c = digest[2];
-    uint32_t d = digest[3];
-    uint32_t e = digest[4];
-
-    r0(block, a, b, c, d, e, 0);
-    r0(block, e, a, b, c, d, 1);
-    r0(block, d, e, a, b, c, 2);
-    r0(block, c, d, e, a, b, 3);
-    r0(block, b, c, d, e, a, 4);
-    r0(block, a, b, c, d, e, 5);
-    r0(block, e, a, b, c, d, 6);
-    r0(block, d, e, a, b, c, 7);
-    r0(block, c, d, e, a, b, 8);
-    r0(block, b, c, d, e, a, 9);
-    r0(block, a, b, c, d, e, 10);
-    r0(block, e, a, b, c, d, 11);
-    r0(block, d, e, a, b, c, 12);
-    r0(block, c, d, e, a, b, 13);
-    r0(block, b, c, d, e, a, 14);
-    r0(block, a, b, c, d, e, 15);
-    r1(block, e, a, b, c, d, 0);
-    r1(block, d, e, a, b, c, 1);
-    r1(block, c, d, e, a, b, 2);
-    r1(block, b, c, d, e, a, 3);
-    r2(block, a, b, c, d, e, 4);
-    r2(block, e, a, b, c, d, 5);
-    r2(block, d, e, a, b, c, 6);
-    r2(block, c, d, e, a, b, 7);
-    r2(block, b, c, d, e, a, 8);
-    r2(block, a, b, c, d, e, 9);
-    r2(block, e, a, b, c, d, 10);
-    r2(block, d, e, a, b, c, 11);
-    r2(block, c, d, e, a, b, 12);
-    r2(block, b, c, d, e, a, 13);
-    r2(block, a, b, c, d, e, 14);
-    r2(block, e, a, b, c, d, 15);
-    r2(block, d, e, a, b, c, 0);
-    r2(block, c, d, e, a, b, 1);
-    r2(block, b, c, d, e, a, 2);
-    r2(block, a, b, c, d, e, 3);
-    r2(block, e, a, b, c, d, 4);
-    r2(block, d, e, a, b, c, 5);
-    r2(block, c, d, e, a, b, 6);
-    r2(block, b, c, d, e, a, 7);
-    r3(block, a, b, c, d, e, 8);
-    r3(block, e, a, b, c, d, 9);
-    r3(block, d, e, a, b, c, 10);
-    r3(block, c, d, e, a, b, 11);
-    r3(block, b, c, d, e, a, 12);
-    r3(block, a, b, c, d, e, 13);
-    r3(block, e, a, b, c, d, 14);
-    r3(block, d, e, a, b, c, 15);
-    r3(block, c, d, e, a, b, 0);
-    r3(block, b, c, d, e, a, 1);
-    r3(block, a, b, c, d, e, 2);
-    r3(block, e, a, b, c, d, 3);
-    r3(block, d, e, a, b, c, 4);
-    r3(block, c, d, e, a, b, 5);
-    r3(block, b, c, d, e, a, 6);
-    r3(block, a, b, c, d, e, 7);
-    r3(block, e, a, b, c, d, 8);
-    r3(block, d, e, a, b, c, 9);
-    r3(block, c, d, e, a, b, 10);
-    r3(block, b, c, d, e, a, 11);
-    r4(block, a, b, c, d, e, 12);
-    r4(block, e, a, b, c, d, 13);
-    r4(block, d, e, a, b, c, 14);
-    r4(block, c, d, e, a, b, 15);
-    r4(block, b, c, d, e, a, 0);
-    r4(block, a, b, c, d, e, 1);
-    r4(block, e, a, b, c, d, 2);
-    r4(block, d, e, a, b, c, 3);
-    r4(block, c, d, e, a, b, 4);
-    r4(block, b, c, d, e, a, 5);
-    r4(block, a, b, c, d, e, 6);
-    r4(block, e, a, b, c, d, 7);
-    r4(block, d, e, a, b, c, 8);
-    r4(block, c, d, e, a, b, 9);
-    r4(block, b, c, d, e, a, 10);
-    r4(block, a, b, c, d, e, 11);
-    r4(block, e, a, b, c, d, 12);
-    r4(block, d, e, a, b, c, 13);
-    r4(block, c, d, e, a, b, 14);
-    r4(block, b, c, d, e, a, 15);
-
-    digest[0] += a;
-    digest[1] += b;
-    digest[2] += c;
-    digest[3] += d;
-    digest[4] += e;
-
-    ++transforms;
-}
-
-std::string sha1(const std::string &string)
-{
-    std::array<uint32_t, 5> digest = {0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0};
-    std::string buffer;
-    uint64_t transforms = 0;
-    std::istringstream is(string);
-
-    while (true) {
-        std::array<char, BLOCK_BYTES> sbuf = {};
-
-        is.read(sbuf.data(), int64_t(BLOCK_BYTES - buffer.size()));
-
-        buffer.append(sbuf.data(), size_t(is.gcount()));
-
-        if (buffer.size() != BLOCK_BYTES) {
-            break;
-        }
-
-        std::array<uint32_t, BLOCK_INTS> block = {};
-
-        bufferToBlock(buffer, block);
-        transform(digest, block, transforms);
-
-        buffer.clear();
-    }
-
-    uint64_t totalBits = (transforms * BLOCK_BYTES + buffer.size()) * 8;
-
-    buffer += "\x80";
-
-    size_t origSize = buffer.size();
-
-    while (buffer.size() < BLOCK_BYTES) {
-        buffer += char(0x00);
-    }
-
-    std::array<uint32_t, BLOCK_INTS> block = {};
-
-    bufferToBlock(buffer, block);
-
-    if (origSize > BLOCK_BYTES - 8) {
-        transform(digest, block, transforms);
-
-        for (size_t i = 0; i < BLOCK_INTS - 2; ++i) {
-            block.at(i) = 0;
-        }
-    }
-
-    block[BLOCK_INTS - 1] = uint32_t(totalBits);
-    block[BLOCK_INTS - 2] = uint32_t(totalBits >> 32U);
-
-    transform(digest, block, transforms);
-
-    std::ostringstream result;
-
-    for (uint32_t d : digest) {
-        result << std::hex << std::setfill('0') << std::setw(8);
-        result << d;
-    }
-
-    return result.str();
-}
-
 bool isStandardUnitName(const std::string &name)
 {
     return standardUnitsList.count(name) != 0;
@@ -587,7 +370,7 @@ bool isStandardUnitName(const std::string &name)
 
 bool isStandardUnit(const UnitsPtr &units)
 {
-    return (units != nullptr) && (units->unitCount() == 0) && isStandardUnitName(units->name());
+    return (units->unitCount() == 0) && isStandardUnitName(units->name());
 }
 
 bool isStandardPrefixName(const std::string &name)
@@ -630,7 +413,7 @@ bool isEntityChildOf(const ParentedEntityPtr &entity1, const ParentedEntityPtr &
 bool areEntitiesSiblings(const ParentedEntityPtr &entity1, const ParentedEntityPtr &entity2)
 {
     auto entity1Parent = entity1->parent();
-    return entity1Parent != nullptr && entity1Parent == entity2->parent();
+    return entity1Parent == entity2->parent();
 }
 
 using PublicPrivateRequiredPair = std::pair<bool, bool>;
@@ -655,7 +438,7 @@ PublicPrivateRequiredPair publicAndOrPrivateInterfaceTypeRequired(const Variable
         auto equivalentVariable = variable->equivalentVariable(index);
         auto componentOfVariable = variable->parent();
         auto componentOfEquivalentVariable = equivalentVariable->parent();
-        if (componentOfVariable == nullptr || componentOfEquivalentVariable == nullptr) {
+        if (componentOfEquivalentVariable == nullptr) {
             return std::make_pair(false, false);
         }
         if (areEntitiesSiblings(componentOfVariable, componentOfEquivalentVariable)
@@ -706,9 +489,7 @@ void findAllVariablesWithEquivalences(const ComponentPtr &component, VariablePtr
     for (size_t index = 0; index < component->variableCount(); ++index) {
         auto variable = component->variable(index);
         if (variable->equivalentVariableCount() > 0) {
-            if (std::find(variables.begin(), variables.end(), variable) == variables.end()) {
-                variables.push_back(variable);
-            }
+            variables.push_back(variable);
         }
     }
     for (size_t index = 0; index < component->componentCount(); ++index) {
@@ -716,74 +497,93 @@ void findAllVariablesWithEquivalences(const ComponentPtr &component, VariablePtr
     }
 }
 
-NameList findCnUnitsNames(const XmlNodePtr &node);
-NameList findComponentCnUnitsNames(const ComponentPtr &component);
-void findAndReplaceCnUnitsNames(const XmlNodePtr &node, const StringStringMap &replaceMap);
-void findAndReplaceComponentCnUnitsNames(const ComponentPtr &component, const StringStringMap &replaceMap);
+/**
+ * @brief Return a set of names taken from MathML cn units attribute.
+ *
+ * Search the given @p node for MathML @c cn elements.
+ * For all @c cn elements return the units reference if it is not empty
+ * or a reference to a standard unit.
+ *
+ * @param node The node to search for MathML @c cn elements.
+ * @return A set of units references.
+ */
+UniqueNames findCnUnitsNames(const XmlNodePtr &node);
+
+/**
+ * @brief Find all MathML @c cn elements units attributes in the given component's math string.
+ *
+ * Search through the @p component's math string and return a list of units references found
+ * on MathML @c cn elements units attribute.
+ *
+ * @param component The component to search.
+ * @return A list of units references.
+ */
+NameList findComponentCnUnitsNames(const ComponentConstPtr &component);
+
+void findAndReplaceCnUnitsNames(const XmlNodePtr &node, const std::string &oldName, const std::string &newName);
+void findAndReplaceComponentCnUnitsNames(const ComponentPtr &component, const std::string &oldName, const std::string &newName);
 size_t getComponentIndexInComponentEntity(const ComponentEntityPtr &componentParent, const ComponentEntityPtr &component);
 IndexStack indexStackOf(const VariablePtr &variable);
 VariablePtr getVariableLocatedAt(const IndexStack &stack, const ModelPtr &model);
 void makeEquivalence(const IndexStack &stack1, const IndexStack &stack2, const ModelPtr &model);
 IndexStack rebaseIndexStack(const IndexStack &stack, const IndexStack &originStack, const IndexStack &destinationStack);
 void componentNames(const ComponentPtr &component, NameList &names);
-std::vector<UnitsPtr> referencedUnits(const ModelPtr &model, const UnitsPtr &units);
 
-NameList findCnUnitsNames(const XmlNodePtr &node)
+UniqueNames findCnUnitsNames(const XmlNodePtr &node)
 {
-    NameList names;
+    UniqueNames names;
     XmlNodePtr childNode = node->firstChild();
     while (childNode != nullptr) {
         if (childNode->isMathmlElement("cn")) {
             std::string u = childNode->attribute("units");
             if (!u.empty() && !isStandardUnitName(u)) {
-                names.push_back(u);
+                names.insert(u);
             }
         }
-        auto childNames = findCnUnitsNames(childNode);
-        names.insert(names.end(), childNames.begin(), childNames.end());
+        names.merge(findCnUnitsNames(childNode));
         childNode = childNode->next();
     }
 
     return names;
 }
 
-NameList findComponentCnUnitsNames(const ComponentPtr &component)
+NameList findComponentCnUnitsNames(const ComponentConstPtr &component)
 {
-    NameList names;
+    UniqueNames nodeUnitsNames;
     // Inspect the MathML in this component for any specified constant <cn> units.
     std::string mathContent = component->math();
     if (mathContent.empty()) {
-        return names;
+        return {};
     }
     std::vector<XmlDocPtr> mathDocs = multiRootXml(mathContent);
     for (const auto &doc : mathDocs) {
         auto rootNode = doc->rootNode();
         if (rootNode->isMathmlElement("math")) {
-            auto nodesNames = findCnUnitsNames(rootNode);
-            names.insert(names.end(), nodesNames.begin(), nodesNames.end());
+            nodeUnitsNames.merge(findCnUnitsNames(rootNode));
         }
     }
 
-    return names;
+    NameList unitsNames(nodeUnitsNames.size());
+    std::copy(nodeUnitsNames.begin(), nodeUnitsNames.end(), unitsNames.begin());
+    return unitsNames;
 }
 
-void findAndReplaceCnUnitsNames(const XmlNodePtr &node, const StringStringMap &replaceMap)
+void findAndReplaceCnUnitsNames(const XmlNodePtr &node, const std::string &oldName, const std::string &newName)
 {
     XmlNodePtr childNode = node->firstChild();
     while (childNode != nullptr) {
         if (childNode->isMathmlElement("cn")) {
             std::string unitsName = childNode->attribute("units");
-            auto foundNameIter = replaceMap.find(unitsName);
-            if (foundNameIter != replaceMap.end()) {
-                childNode->setAttribute("units", foundNameIter->second.c_str());
+            if (unitsName == oldName) {
+                childNode->setAttribute("units", newName.c_str());
             }
         }
-        findAndReplaceCnUnitsNames(childNode, replaceMap);
+        findAndReplaceCnUnitsNames(childNode, oldName, newName);
         childNode = childNode->next();
     }
 }
 
-void findAndReplaceComponentCnUnitsNames(const ComponentPtr &component, const StringStringMap &replaceMap)
+void findAndReplaceComponentCnUnitsNames(const ComponentPtr &component, const std::string &oldName, const std::string &newName)
 {
     std::string mathContent = component->math();
     if (mathContent.empty()) {
@@ -796,7 +596,7 @@ void findAndReplaceComponentCnUnitsNames(const ComponentPtr &component, const St
         auto rootNode = doc->rootNode();
         if (rootNode->isMathmlElement("math")) {
             auto originalMath = rootNode->convertToString();
-            findAndReplaceCnUnitsNames(rootNode, replaceMap);
+            findAndReplaceCnUnitsNames(rootNode, oldName, newName);
             auto newMath = rootNode->convertToString();
             newMathContent += newMath;
             if (newMath != originalMath) {
@@ -810,12 +610,12 @@ void findAndReplaceComponentCnUnitsNames(const ComponentPtr &component, const St
     }
 }
 
-void findAndReplaceComponentsCnUnitsNames(const ComponentPtr &component, const StringStringMap &replaceMap)
+void findAndReplaceComponentsCnUnitsNames(const ComponentPtr &component, const std::string &oldName, const std::string &newName)
 {
-    findAndReplaceComponentCnUnitsNames(component, replaceMap);
+    findAndReplaceComponentCnUnitsNames(component, oldName, newName);
     for (size_t index = 0; index < component->componentCount(); ++index) {
         auto childComponent = component->component(index);
-        findAndReplaceComponentCnUnitsNames(childComponent, replaceMap);
+        findAndReplaceComponentCnUnitsNames(childComponent, oldName, newName);
     }
 }
 
@@ -823,7 +623,7 @@ size_t getComponentIndexInComponentEntity(const ComponentEntityPtr &componentPar
 {
     size_t index = 0;
     bool found = false;
-    while ((index < componentParent->componentCount()) && !found) {
+    while (!found) {
         if (componentParent->component(index) == component) {
             found = true;
         } else {
@@ -867,23 +667,21 @@ EquivalenceMap rebaseEquivalenceMap(const EquivalenceMap &map, const IndexStack 
     for (const auto &entry : map) {
         auto key = entry.first;
         auto rebasedKey = rebaseIndexStack(key, originStack, destinationStack);
-        if (!rebasedKey.empty()) {
-            auto vector = entry.second;
-            std::vector<IndexStack> rebasedVector;
-            for (auto stack : vector) {
-                // Temporarily remove the variable index whilst we rebase the component part of the stack.
-                size_t variableIndex = stack.back();
-                stack.pop_back();
-                auto rebasedTarget = rebaseIndexStack(stack, originStack, destinationStack);
-                if (!rebasedTarget.empty()) {
-                    rebasedTarget.push_back(variableIndex);
-                    rebasedVector.push_back(rebasedTarget);
-                }
+        auto vector = entry.second;
+        std::vector<IndexStack> rebasedVector;
+        for (auto stack : vector) {
+            // Temporarily remove the variable index whilst we rebase the component part of the stack.
+            size_t variableIndex = stack.back();
+            stack.pop_back();
+            auto rebasedTarget = rebaseIndexStack(stack, originStack, destinationStack);
+            if (!rebasedTarget.empty()) {
+                rebasedTarget.push_back(variableIndex);
+                rebasedVector.push_back(rebasedTarget);
             }
+        }
 
-            if (!rebasedVector.empty()) {
-                rebasedMap.emplace(rebasedKey, rebasedVector);
-            }
+        if (!rebasedVector.empty()) {
+            rebasedMap.emplace(rebasedKey, rebasedVector);
         }
     }
 
@@ -927,48 +725,55 @@ std::vector<UnitsPtr> referencedUnits(const ModelPtr &model, const UnitsPtr &uni
 {
     std::vector<UnitsPtr> requiredUnits;
 
-    std::string ref;
-    std::string pre;
-    std::string id;
-    double expMult;
-    double uExp;
-
     for (size_t index = 0; index < units->unitCount(); ++index) {
-        units->unitAttributes(index, ref, pre, uExp, expMult, id);
+        const std::string ref = units->unitAttributeReference(index);
         if (!isStandardUnitName(ref)) {
             auto refUnits = model->units(ref);
-            if (refUnits != nullptr) {
-                auto requiredUnitsUnits = referencedUnits(model, refUnits);
-                requiredUnits.insert(requiredUnits.end(), requiredUnitsUnits.begin(), requiredUnitsUnits.end());
-                requiredUnits.push_back(refUnits);
-            }
+            auto requiredUnitsUnits = referencedUnits(model, refUnits);
+            requiredUnits.insert(requiredUnits.end(), requiredUnitsUnits.begin(), requiredUnitsUnits.end());
+            requiredUnits.push_back(refUnits);
         }
     }
 
     return requiredUnits;
 }
 
-std::vector<UnitsPtr> unitsUsed(const ModelPtr &model, const ComponentPtr &component)
+std::vector<UnitsPtr> unitsUsed(const ModelPtr &model, const ComponentConstPtr &component)
 {
     std::vector<UnitsPtr> usedUnits;
+
+    // Get all the units used by variables in this component.
+
     for (size_t i = 0; i < component->variableCount(); ++i) {
         auto v = component->variable(i);
         auto u = v->units();
-        if ((u != nullptr) && !isStandardUnitName(u->name())) {
-            auto requiredUnits = referencedUnits(model, u);
+        if ((u != nullptr) && !isStandardUnitName(u->name()) && (model != nullptr)) {
+            auto modelUnits = model->units(u->name());
+            auto availableUnits = modelUnits ? modelUnits : u;
+            auto requiredUnits = referencedUnits(model, availableUnits);
             usedUnits.insert(usedUnits.end(), requiredUnits.begin(), requiredUnits.end());
+            usedUnits.push_back(availableUnits);
+        } else if (model == nullptr) {
             usedUnits.push_back(u);
         }
     }
+
+    // Get all the units used by cn elements in the components maths.
+
     auto componentCnUnitsNames = findComponentCnUnitsNames(component);
     for (const auto &unitsName : componentCnUnitsNames) {
         auto u = model->units(unitsName);
-        if ((u != nullptr) && !isStandardUnitName(u->name())) {
+        if (u == nullptr) {
+            // We have used a units in the math but it is not defined in the given model, so send back a units that isn't defined.
+            u = Units::create(unitsName);
+        } else {
             auto requiredUnits = referencedUnits(model, u);
             usedUnits.insert(usedUnits.end(), requiredUnits.begin(), requiredUnits.end());
-            usedUnits.push_back(u);
         }
+        usedUnits.push_back(u);
     }
+
+    // Get all the units used by child components of this component.
 
     for (size_t i = 0; i < component->componentCount(); ++i) {
         auto childComponent = component->component(i);
@@ -1081,12 +886,11 @@ void listComponentIds(const ComponentPtr &component, IdList &idList)
         idList.insert(id);
     }
     // Imports.
-    if (component->isImport()) {
-        if (component->importSource() != nullptr) {
-            id = component->importSource()->id();
-            if (!id.empty()) {
-                idList.insert(id);
-            }
+    auto importSource = component->importSource();
+    if (importSource != nullptr) {
+        id = importSource->id();
+        if (!id.empty()) {
+            idList.insert(id);
         }
     }
     // Component reference in encapsulation structure.
@@ -1096,19 +900,20 @@ void listComponentIds(const ComponentPtr &component, IdList &idList)
     }
     // Variables.
     for (size_t v = 0; v < component->variableCount(); ++v) {
-        id = component->variable(v)->id();
+        auto variable = component->variable(v);
+        id = variable->id();
         if (!id.empty()) {
             idList.insert(id);
         }
 
-        for (size_t e = 0; e < component->variable(v)->equivalentVariableCount(); ++e) {
+        for (size_t e = 0; e < variable->equivalentVariableCount(); ++e) {
             // Equivalent variable mappings.
-            id = Variable::equivalenceMappingId(component->variable(v), component->variable(v)->equivalentVariable(e));
+            id = Variable::equivalenceMappingId(variable, variable->equivalentVariable(e));
             if (!id.empty()) {
                 idList.insert(id);
             }
             // Connections.
-            id = Variable::equivalenceConnectionId(component->variable(v), component->variable(v)->equivalentVariable(e));
+            id = Variable::equivalenceConnectionId(variable, variable->equivalentVariable(e));
             if (!id.empty()) {
                 idList.insert(id);
             }
@@ -1116,15 +921,16 @@ void listComponentIds(const ComponentPtr &component, IdList &idList)
     }
     // Resets.
     for (size_t r = 0; r < component->resetCount(); ++r) {
-        id = component->reset(r)->id();
+        auto reset = component->reset(r);
+        id = reset->id();
         if (!id.empty()) {
             idList.insert(id);
         }
-        id = component->reset(r)->testValueId();
+        id = reset->testValueId();
         if (!id.empty()) {
             idList.insert(id);
         }
-        id = component->reset(r)->resetValueId();
+        id = reset->resetValueId();
         if (!id.empty()) {
             idList.insert(id);
         }
@@ -1156,20 +962,19 @@ IdList listIds(const ModelPtr &model)
             idList.insert(id);
         }
         // Imports.
-        if (units->isImport()) {
-            if (units->importSource() != nullptr) {
-                id = units->importSource()->id();
-                if (!id.empty()) {
-                    idList.insert(id);
-                }
+        auto importSource = units->importSource();
+        if (importSource != nullptr) {
+            id = importSource->id();
+            if (!id.empty()) {
+                idList.insert(id);
             }
         }
-        for (size_t i = 0; i < model->units(u)->unitCount(); ++i) {
+        for (size_t i = 0; i < units->unitCount(); ++i) {
             std::string prefix;
             std::string reference;
             double exponent;
             double multiplier;
-            model->units(u)->unitAttributes(i, reference, prefix, exponent, multiplier, id);
+            units->unitAttributes(i, reference, prefix, exponent, multiplier, id);
             if (!id.empty()) {
                 idList.insert(id);
             }
@@ -1354,7 +1159,7 @@ bool equalEntities(const EntityPtr &owner, const std::vector<EntityPtr> &entitie
                 }
             }
         }
-        if (entityFound && index < size_t(std::numeric_limits<ptrdiff_t>::max())) {
+        if (entityFound) {
             // We are going to assume here that nobody is going to add more
             // than 2,147,483,647 units to this component. And much more than
             // that in a 64-bit environment.
@@ -1441,6 +1246,73 @@ std::string formDescriptionOfCyclicDependency(const History &history, const std:
     }
 
     return msgHeader + msgHistory;
+}
+
+size_t nonCommentChildCount(const XmlNodePtr &node)
+{
+    size_t res = 0;
+    auto childNode = node->firstChild();
+
+    while (childNode != nullptr) {
+        if (!childNode->isComment()) {
+            ++res;
+        }
+
+        childNode = childNode->next();
+    }
+
+    return res;
+}
+
+XmlNodePtr nonCommentChildNode(const XmlNodePtr &node, size_t index)
+{
+    // Note: we assume that there is always a non-comment child at the given
+    //       index, hence we never test res for nullptr.
+
+    auto res = node->firstChild();
+    auto childNodeIndex = res->isComment() ? MAX_SIZE_T : 0;
+
+    while (childNodeIndex != index) {
+        res = res->next();
+
+        if (!res->isComment()) {
+            ++childNodeIndex;
+        }
+    }
+
+    return res;
+}
+
+size_t mathmlChildCount(const XmlNodePtr &node)
+{
+    size_t res = 0;
+    auto childNode = node->firstChild();
+
+    while (childNode != nullptr) {
+        if (childNode->isMathmlElement()) {
+            ++res;
+        }
+
+        childNode = childNode->next();
+    }
+
+    return res;
+}
+
+XmlNodePtr mathmlChildNode(const XmlNodePtr &node, size_t index)
+{
+    auto res = node->firstChild();
+    auto childNodeIndex = res->isMathmlElement() ? 0 : MAX_SIZE_T;
+
+    while ((res != nullptr) && (childNodeIndex != index)) {
+        res = res->next();
+
+        if ((res != nullptr) && res->isMathmlElement()) {
+            ++childNodeIndex;
+        }
+    }
+
+    return res;
 }
 
 } // namespace libcellml

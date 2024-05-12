@@ -26,12 +26,17 @@ limitations under the License.
 
 #include "libcellml/component.h"
 #include "libcellml/importsource.h"
+#include "libcellml/issue.h"
 #include "libcellml/model.h"
 #include "libcellml/reset.h"
 #include "libcellml/units.h"
 #include "libcellml/variable.h"
 
+#include "anycellmlelement_p.h"
+#include "commonutils.h"
 #include "internaltypes.h"
+#include "issue_p.h"
+#include "logger_p.h"
 #include "utilities.h"
 #include "xmldoc.h"
 
@@ -42,15 +47,19 @@ namespace libcellml {
  *
  * The private implementation for the Printer class.
  */
-struct Printer::PrinterImpl
+class Printer::PrinterImpl: public Logger::LoggerImpl
 {
-    std::string printImports(const ModelPtr &model, IdList &idList, bool autoIds);
-    std::string printUnits(const UnitsPtr &units, IdList &idList, bool autoIds);
+public:
+    Printer *mPrinter = nullptr;
+
     std::string printComponent(const ComponentPtr &component, IdList &idList, bool autoIds);
     std::string printEncapsulation(const ComponentPtr &component, IdList &idList, bool autoIds);
-    std::string printVariable(const VariablePtr &variable, IdList &idList, bool autoIds);
+    std::string printImports(const ModelPtr &model, IdList &idList, bool autoIds);
+    std::string printMath(const std::string &math);
     std::string printReset(const ResetPtr &reset, IdList &idList, bool autoIds);
     std::string printResetChild(const std::string &childLabel, const std::string &childId, const std::string &math, IdList &idList, bool autoIds);
+    std::string printUnits(const UnitsPtr &units, IdList &idList, bool autoIds);
+    std::string printVariable(const VariablePtr &variable, IdList &idList, bool autoIds);
 };
 
 std::string printMapVariables(const VariablePairPtr &variablePair, IdList &idList, bool autoIds)
@@ -76,11 +85,10 @@ std::string printConnections(const ComponentMap &componentMap, const VariableMap
         ComponentPtr currentComponent1 = iterPair->first;
         ComponentPtr currentComponent2 = iterPair->second;
         ComponentPair currentComponentPair = std::make_pair(currentComponent1, currentComponent2);
-        ComponentPair reciprocalCurrentComponentPair = std::make_pair(currentComponent2, currentComponent1);
         // Check whether this set of connections has already been serialised.
         bool pairFound = false;
         for (const auto &serialisedIterPair : serialisedComponentMap) {
-            if ((serialisedIterPair == currentComponentPair) || (serialisedIterPair == reciprocalCurrentComponentPair)) {
+            if (serialisedIterPair == currentComponentPair) {
                 pairFound = true;
                 break;
             }
@@ -107,10 +115,7 @@ std::string printConnections(const ComponentMap &componentMap, const VariableMap
             ++componentMapIndex2;
         }
         // Serialise out the new connection.
-        connections += "<connection";
-        if (currentComponent1 != nullptr) {
-            connections += " component_1=\"" + currentComponent1->name() + "\"";
-        }
+        connections += "<connection component_1=\"" + currentComponent1->name() + "\"";
         if (currentComponent2 != nullptr) {
             connections += " component_2=\"" + currentComponent2->name() + "\"";
         }
@@ -127,12 +132,39 @@ std::string printConnections(const ComponentMap &componentMap, const VariableMap
     return connections;
 }
 
-std::string printMath(const std::string &math)
+std::string Printer::PrinterImpl::printMath(const std::string &math)
 {
+    static const std::string wrapElementName = "math_wrap_as_single_root_element";
     static const std::regex before(">[\\s\n\t]*");
     static const std::regex after("[\\s\n\t]*<");
-    auto temp = std::regex_replace(math, before, ">");
-    return std::regex_replace(temp, after, "<");
+    static const std::regex xmlDeclaration(R"|(<\?xml[[:space:]]+version=.*\?>)|");
+
+    XmlDocPtr xmlDoc = std::make_shared<XmlDoc>();
+    xmlKeepBlanksDefault(0);
+    // Remove any XML declarations from the string.
+    std::string normalisedMath = std::regex_replace(math, xmlDeclaration, "");
+    xmlDoc->parse("<" + wrapElementName + ">" + normalisedMath + "</" + wrapElementName + ">");
+    if (xmlDoc->xmlErrorCount() == 0) {
+        auto rootNode = xmlDoc->rootNode();
+        auto childNode = rootNode->firstChild();
+        std::string result;
+        while (childNode != nullptr) {
+            result += childNode->convertToStrippedString();
+            childNode = childNode->next();
+        }
+        // Clean whitespace in the math.
+        result = std::regex_replace(result, before, ">");
+        return std::regex_replace(result, after, "<");
+    } else {
+        for (size_t i = 0; i < xmlDoc->xmlErrorCount(); ++i) {
+            auto issue = Issue::IssueImpl::create();
+            issue->mPimpl->setDescription("LibXml2 error: " + xmlDoc->xmlError(i));
+            issue->mPimpl->setReferenceRule(Issue::ReferenceRule::XML);
+            addIssue(issue);
+        }
+    }
+
+    return "";
 }
 
 void buildMapsForComponentsVariables(const ComponentPtr &component, ComponentMap &componentMap, VariableMap &variableMap)
@@ -141,23 +173,20 @@ void buildMapsForComponentsVariables(const ComponentPtr &component, ComponentMap
         VariablePtr variable = component->variable(i);
         for (size_t j = 0; j < variable->equivalentVariableCount(); ++j) {
             VariablePtr equivalentVariable = variable->equivalentVariable(j);
-            if (equivalentVariable->hasEquivalentVariable(variable)) {
-                VariablePairPtr variablePair = VariablePair::create(variable, equivalentVariable);
-                auto pairFound = std::find_if(variableMap.begin(), variableMap.end(),
-                                              [variable, equivalentVariable](const VariablePairPtr &in) {
-                                                  return ((in->variable1() == equivalentVariable) && (in->variable2() == variable))
-                                                         || ((in->variable1() == variable) && (in->variable2() == equivalentVariable));
-                                              });
-                if (pairFound == variableMap.end()) {
-                    // Get parent components.
-                    ComponentPtr component1 = owningComponent(variable);
-                    ComponentPtr component2 = owningComponent(equivalentVariable);
-                    // Add new unique variable equivalence pair to the VariableMap.
-                    variableMap.push_back(variablePair);
-                    // Also create a component map pair corresponding with the variable map pair.
-                    ComponentPair componentPair = std::make_pair(component1, component2);
-                    componentMap.push_back(componentPair);
-                }
+            VariablePairPtr variablePair = VariablePair::create(variable, equivalentVariable);
+            auto pairFound = std::find_if(variableMap.begin(), variableMap.end(),
+                                          [variable, equivalentVariable](const VariablePairPtr &in) {
+                                              return (in->variable1() == equivalentVariable) && (in->variable2() == variable);
+                                          });
+            if (pairFound == variableMap.end()) {
+                // Add new unique variable equivalence pair to the VariableMap.
+                variableMap.push_back(variablePair);
+                // Get parent components.
+                ComponentPtr component1 = owningComponent(variable);
+                ComponentPtr component2 = owningComponent(equivalentVariable);
+                // Also create a component map pair corresponding with the variable map pair.
+                ComponentPair componentPair = std::make_pair(component1, component2);
+                componentMap.push_back(componentPair);
             }
         }
     }
@@ -255,7 +284,13 @@ std::string Printer::PrinterImpl::printComponent(const ComponentPtr &component, 
                 repr += printReset(component->reset(i), idList, autoIds);
             }
             if (!component->math().empty()) {
+                size_t startIssueCount = mPrinter->issueCount();
                 repr += printMath(component->math());
+                size_t endIssueCount = mPrinter->issueCount();
+                for (size_t current = startIssueCount; current < endIssueCount; ++current) {
+                    auto issue = mPrinter->issue(current);
+                    issue->mPimpl->mItem->mPimpl->setComponent(component);
+                }
             }
 
             repr += "</component>";
@@ -376,6 +411,7 @@ std::string Printer::PrinterImpl::printReset(const ResetPtr &reset, IdList &idLi
         repr += " id=\"" + makeUniqueId(idList) + "\"";
     }
 
+    size_t startIssueCount = mPrinter->issueCount();
     std::string testValue = printResetChild("test_value", reset->testValueId(), reset->testValue(), idList, autoIds);
     if (!testValue.empty()) {
         repr += ">" + testValue;
@@ -390,6 +426,11 @@ std::string Printer::PrinterImpl::printReset(const ResetPtr &reset, IdList &idLi
         hasChild = true;
     }
     if (hasChild) {
+        size_t endIssueCount = mPrinter->issueCount();
+        for (size_t current = startIssueCount; current < endIssueCount; ++current) {
+            auto issue = mPrinter->issue(current);
+            issue->mPimpl->mItem->mPimpl->setReset(reset);
+        }
         repr += "</reset>";
     } else {
         repr += "/>";
@@ -453,14 +494,20 @@ std::string Printer::PrinterImpl::printImports(const ModelPtr &model, IdList &id
     return repr;
 }
 
-Printer::Printer()
-    : mPimpl(new PrinterImpl())
+Printer::PrinterImpl *Printer::pFunc()
 {
+    return reinterpret_cast<Printer::PrinterImpl *>(Logger::pFunc());
+}
+
+Printer::Printer()
+    : Logger(new PrinterImpl())
+{
+    pFunc()->mPrinter = this;
 }
 
 Printer::~Printer()
 {
-    delete mPimpl;
+    delete pFunc();
 }
 
 PrinterPtr Printer::create() noexcept
@@ -468,7 +515,7 @@ PrinterPtr Printer::create() noexcept
     return std::shared_ptr<Printer> {new Printer {}};
 }
 
-std::string Printer::printModel(const ModelPtr &model, bool autoIds) const
+std::string Printer::printModel(const ModelPtr &model, bool autoIds)
 {
     if (model == nullptr) {
         return "";
@@ -497,11 +544,11 @@ std::string Printer::printModel(const ModelPtr &model, bool autoIds) const
     }
 
     if (model->hasImports()) {
-        repr += mPimpl->printImports(model, idList, autoIds);
+        repr += pFunc()->printImports(model, idList, autoIds);
     }
 
     for (size_t i = 0; i < model->unitsCount(); ++i) {
-        repr += mPimpl->printUnits(model->units(i), idList, autoIds);
+        repr += pFunc()->printUnits(model->units(i), idList, autoIds);
     }
 
     std::string componentEncapsulation;
@@ -509,9 +556,9 @@ std::string Printer::printModel(const ModelPtr &model, bool autoIds) const
     //  ... but their locally-defined children have not.
     for (size_t i = 0; i < model->componentCount(); ++i) {
         ComponentPtr component = model->component(i);
-        repr += mPimpl->printComponent(component, idList, autoIds);
+        repr += pFunc()->printComponent(component, idList, autoIds);
         if (component->componentCount() > 0) {
-            componentEncapsulation += mPimpl->printEncapsulation(component, idList, autoIds);
+            componentEncapsulation += pFunc()->printEncapsulation(component, idList, autoIds);
         }
     }
 

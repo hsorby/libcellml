@@ -19,7 +19,6 @@ limitations under the License.
 #include "libcellml/componententity.h"
 #include "libcellml/exportdefinitions.h"
 #include "libcellml/importedentity.h"
-#include "libcellml/importsource.h"
 
 #ifndef SWIG
 template class LIBCELLML_EXPORT std::weak_ptr<libcellml::Component>;
@@ -403,6 +402,20 @@ public:
      * @return @c true if the @p reset is in this component and @c false otherwise.
      */
     bool hasReset(const ResetPtr &reset) const;
+
+    /**
+     * @brief Tests whether this component is defined or not.
+     *
+     * Analyses the component and determines if the component is fully defined.
+     * A fully defined component will have no unresolved imports, all variables
+     * will have fully defined units, and all math constant units will be fully defined.
+     * If the component is fully defined it will return @c true, @c false otherwise.
+     *
+     * @see Units::isDefined()
+     *
+     * @return @c true if the component is fully defined, @c false otherwise.
+     */
+    bool isDefined() const;
 
     /**
      * @brief Create a clone of this component.

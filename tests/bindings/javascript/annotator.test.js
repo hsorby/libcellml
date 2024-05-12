@@ -28,9 +28,14 @@ describe("Annotator tests", () => {
         libcellml = await loadLibCellML()
     });
     beforeEach(() => {
-        const p = new libcellml.Parser()
+        const p = new libcellml.Parser(true)
         m = p.parseModel(duplicatedIdsModel)
         a = new libcellml.Annotator()
+
+        p.delete()
+    });
+    afterEach(() => {
+        a.delete()
     });
     test('Checking Annotator model.', () => {
         expect(a.hasModel()).toBe(false)
@@ -54,7 +59,7 @@ describe("Annotator tests", () => {
         expect(a.assignAllIds()).toBe(true)
 
         expect(a.itemCount("b4da55")).toBe(1)
-        expect(a.assignAllIdsByModel(m)).toBe(true)
+        expect(a.assignAllIdsByModel(m)).toBe(false)
 
         a.clearAllIdsByModel(m)
 
@@ -95,6 +100,9 @@ describe("Annotator tests", () => {
         expect(a.assignIdByVariablePair(vp, libcellml.CellmlElementType.CONNECTION)).toBe("b4da5c")
         expect(a.assignIdByVariableVariable(v3, v4, libcellml.CellmlElementType.MAP_VARIABLES)).toBe("b4da5d")
         expect(a.assignIdByUnitsIndex(m.unitsByIndex(0), 0)).toBe("b4da5e")
+
+        vp.delete()
+        ui.delete()
     });
     test('Checking Annotator ids.', () => {
         a.setModel(m)
@@ -112,8 +120,8 @@ describe("Annotator tests", () => {
         expect(a.component("b4da5e").name()).toBe("component4")
         expect(a.componentByIndex("b4da5e", 0).name()).toBe("component4")
 
-        expect(a.componentEncapsulation("b4da70").name()).toBe("component2")
-        expect(a.componentEncapsulationByIndex("b4da70", 0).name()).toBe("component2")
+        expect(a.componentEncapsulation("b4da65").name()).toBe("component2")
+        expect(a.componentEncapsulationByIndex("b4da65", 0).name()).toBe("component2")
 
         expect(a.connection("b4da61").isValid()).toBe(true)
         expect(a.connectionByIndex("b4da61", 0).isValid()).toBe(true)
@@ -130,14 +138,14 @@ describe("Annotator tests", () => {
         expect(a.modelById("b4da55").name()).toBe("everything")
         expect(a.modelByIdIndex("b4da55", 0).name()).toBe("everything")
 
-        expect(a.reset("b4da6a").order()).toBe(1)
-        expect(a.resetByIndex("b4da6a", 0).order()).toBe(1)
+        expect(a.reset("b4da6b").order()).toBe(1)
+        expect(a.resetByIndex("b4da6b", 0).order()).toBe(1)
 
-        expect(a.resetValue("b4da6b").variable().name()).toBe("variable1")
-        expect(a.resetValueByIndex("b4da6b", 0).variable().name()).toBe("variable1")
+        expect(a.resetValue("b4da6c").variable().name()).toBe("variable1")
+        expect(a.resetValueByIndex("b4da6c", 0).variable().name()).toBe("variable1")
 
-        expect(a.testValue("b4da6c").testVariable().name()).toBe("variable2")
-        expect(a.testValueByIndex("b4da6c", 0).testVariable().name()).toBe("variable2")
+        expect(a.testValue("b4da6d").testVariable().name()).toBe("variable2")
+        expect(a.testValueByIndex("b4da6d", 0).testVariable().name()).toBe("variable2")
 
         expect(a.unitsItem("b4da5c").index()).toBe(0)
         expect(a.unitsItemByIndex("b4da5c", 0).index()).toBe(0)
