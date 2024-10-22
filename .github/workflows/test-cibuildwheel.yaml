@@ -1,4 +1,4 @@
-name: libcellml-deploy-on-release
+name: test-libcellml-deploy-on-release
 
 on:
   push:
@@ -57,10 +57,8 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install cibuildwheel
-        run: python -m pip install cibuildwheel==2.21.3
-
       - name: Build wheels
+        uses: pypa/cibuildwheel@v2.21.3
         run: python -m cibuildwheel --output-dir wheelhouse src/bindings/python/
         env:
           #CIBW_BUILD_VERBOSITY: 1
@@ -76,4 +74,7 @@ jobs:
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: ""
           CIBW_BEFORE_BUILD_LINUX: pip install renamewheel
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: renamewheel -w {dest_dir} {wheel}
+        with:
+          output-dir: wheelhouse
+          package-dir: src/bindings/python/
 

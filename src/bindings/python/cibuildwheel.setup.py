@@ -28,6 +28,9 @@ if platform.system() == "Windows":
 
 doclines = __doc__.split("\n")
 
+print("----------------")
+print(os.environ)
+print("----------------")
 tag = os.environ.get("LIBCELLML_VERSION_TAG", "v0.0.0")
 
 setup(
