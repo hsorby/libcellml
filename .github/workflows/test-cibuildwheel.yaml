@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-13, ubuntu-20.04, windows-2019]
+        os: [macos-13, ubuntu-20.04]
         py: ['3.12']
 
     steps:
@@ -32,7 +32,7 @@ jobs:
           mv src/bindings/python/cibuildwheel.setup.py src/bindings/python/setup.py
           v=${{ matrix.py }}
           echo "Setting tag as: tag=${GITHUB_REF#refs/tags/}"
-          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          echo "tag=v0.6.0-rc.1" >> $GITHUB_OUTPUT
           echo "Setting build as: build=cp${v/./}-*"
           echo "build=cp${v/./}-*" >> $GITHUB_OUTPUT
           if [[ "macOS" == "${{ matrix.name }}" ]]; then
@@ -73,7 +73,6 @@ jobs:
           CIBW_ENVIRONMENT: LIBCELLML_VERSION_TAG=${{ steps.setup.outputs.tag }}
           CIBW_ENVIRONMENT_MACOS: >
             MACOSX_DEPLOYMENT_TARGET=10.15
-            LIBCELLML_VERSION_TAG=${{ steps.setup.outputs.tag }}
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: ""
           CIBW_BEFORE_BUILD_LINUX: pip install renamewheel
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: renamewheel -w {dest_dir} {wheel}
