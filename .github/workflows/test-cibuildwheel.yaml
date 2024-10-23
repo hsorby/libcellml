@@ -51,9 +51,11 @@ jobs:
             if [[ "${{ matrix.py }}" == "3.8" ]]; then
               echo "Setting macos_archs as: macos_archs='x86_64'"
               echo "macos_archs=x86_64" >> $GITHUB_OUTPUT
+              echo "macos_deployment_target=10.15" >> $GITHUB_OUTPUT
             else
               echo "Setting macos_archs as: macos_archs='x86_64 arm64'"
-              echo 'MACOS_ARCHS=x86_64 arm64' >> $GITHUB_OUTPUT
+              echo 'macos_archs=x86_64 arm64' >> $GITHUB_OUTPUT
+              echo "macos_deployment_target=11.0" >> $GITHUB_OUTPUT
             fi
           else
             echo "Setting macos_archs as: macos_archs='x86_64'"
@@ -80,7 +82,7 @@ jobs:
           CIBW_BEFORE_ALL_WINDOWS: cd src/bindings/python && cmake -S wheel_dependencies -B build-wheel_dependencies -G Ninja && cd build-wheel_dependencies && ninja
           CIBW_ENVIRONMENT: LIBCELLML_VERSION_TAG=${{ steps.setup.outputs.tag }}
           CIBW_ENVIRONMENT_MACOS: >
-            MACOSX_DEPLOYMENT_TARGET=10.15
+            MACOSX_DEPLOYMENT_TARGET=${{ steps.setup.outputs.macos_deployment_target }}
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: ""
           CIBW_BEFORE_BUILD_LINUX: pip install renamewheel
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: renamewheel -w {dest_dir} {wheel}
