@@ -68,15 +68,33 @@ jobs:
           cd C:\
           curl -L https://github.com/cellml/gha/releases/download/gha/libxml2-Windows.tar.gz -o libxml2.tar.gz -s
           tar -xzf libxml2.tar.gz
-      - name: Install SWIG (macOS only and if needed)
-        if: ${{ runner.os == 'macOS' && matrix.python_bindings == 'ON' }}
-        run: brew install swig
+          echo "ls"
+          ls 
+          echo "ls libxml2"
+          ls libxml2\
+          echo "ls libxml2\libxml2-2.9.10\"
+          ls libxml2\libxml2-2.9.10\
+          echo "libxml2\libxml2-2.9.10\CMake"
+          ls libxml2\libxml2-2.9.10\CMake
       - name: Install zlib (Windows only)
         if: ${{ runner.os == 'Windows' }}
         run: |
           cd C:\
           curl -L https://github.com/cellml/gha/releases/download/gha/zlib-Windows.tar.gz -o zlib.tar.gz -s
           tar -xzf zlib.tar.gz
+          echo "ls"
+          ls 
+          echo "ls zlib"
+          ls zlib\
+          echo "ls zlib\lib\"
+          ls zlib\lib\
+          echo "ls zlib\lib\cmake"
+          ls zlib\lib\cmake
+          echo "zlib\lib\cmake\ZLIB-1.2.12"
+          ls zlib\lib\cmake\ZLIB-1.2.12
+      - name: Install SWIG (macOS only and if needed)
+        if: ${{ runner.os == 'macOS' && matrix.python_bindings == 'ON' }}
+        run: brew install swig
       - name: Configure libCellML
         run: cmake -G Ninja -S . -B build -DBINDINGS_PYTHON=${{ matrix.python_bindings }} -DBUILD_SHARED=${{ matrix.python_bindings }} -DCOVERAGE=OFF -DLLVM_COVERAGE=OFF -DMEMCHECK=OFF -DUNIT_TESTS=ON ${{ matrix.additional_cmake_options }}
       - name: Build libCellML
