@@ -68,10 +68,8 @@ jobs:
           cd C:\
           curl -L https://github.com/cellml/gha/releases/download/gha/libxml2-Windows.tar.gz -o libxml2.tar.gz -s
           tar -xzf libxml2.tar.gz
-          echo "ls"
-          ls 
-          echo "ls libxml2"
-          ls libxml2\
+          echo "ls C:\libxml2"
+          ls C:\libxml2\
           echo "ls libxml2\libxml2-2.9.10\"
           ls libxml2\libxml2-2.9.10\
           echo "libxml2\libxml2-2.9.10\CMake"

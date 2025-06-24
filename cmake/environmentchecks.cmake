@@ -117,13 +117,14 @@ set(HAVE_LIBXML2_CONFIG FALSE)
 #
 # This does change how we get information about include paths and such so we
 # need to track how we found LibXml2.
-find_package(LibXml2 CONFIG QUIET)
+find_package(LibXml2 CONFIG)
+find_package(ZLIB CONFIG)
 if(LibXml2_FOUND)
   if(TARGET z)
     set(HAVE_ZLIB_TARGET TRUE)
     get_target_property(ZLIB_TARGET_TYPE z TYPE)
   else()
-    find_package(ZLIB CONFIG QUIET)
+    find_package(ZLIB CONFIG)
     if(ZLIB_FOUND)
       if(TARGET z)
         set(HAVE_ZLIB_TARGET TRUE)
