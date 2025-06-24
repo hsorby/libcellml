@@ -74,6 +74,7 @@ jobs:
           ls libxml2\libxml2-2.9.10\
           echo "libxml2\libxml2-2.9.10\CMake"
           ls libxml2\libxml2-2.9.10\CMake
+          cat "libxml2\libxml2-2.9.10\CMake\libxml2-config.cmake"
       - name: Install zlib (Windows only)
         if: ${{ runner.os == 'Windows' }}
         run: |
