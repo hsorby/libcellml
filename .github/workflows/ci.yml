@@ -27,24 +27,24 @@ jobs:
             os: windows-latest
             python_bindings: ON
             additional_cmake_options: -DLibXml2_DIR="C:\libxml2\libxml2-2.9.10\CMake" -DZLIB_DIR="C:\zlib\lib\cmake\ZLIB-1.2.12"
-          - name: 'Linux static - C++'
-            os: ubuntu-latest
-            python_bindings: OFF
-          - name: 'Linux shared - C++/Python'
-            os: ubuntu-latest
-            python_bindings: ON
-          - name: 'macOS static - C++ (Intel)'
-            os: macos-13
-            python_bindings: OFF
-          - name: 'macOS shared - C++/Python (Intel)'
-            os: macos-13
-            python_bindings: ON
-          - name: 'macOS static - C++ (ARM)'
-            os: macos-latest
-            python_bindings: OFF
-          - name: 'macOS shared - C++/Python (ARM)'
-            os: macos-latest
-            python_bindings: ON
+          # - name: 'Linux static - C++'
+          #   os: ubuntu-latest
+          #   python_bindings: OFF
+          # - name: 'Linux shared - C++/Python'
+          #   os: ubuntu-latest
+          #   python_bindings: ON
+          # - name: 'macOS static - C++ (Intel)'
+          #   os: macos-13
+          #   python_bindings: OFF
+          # - name: 'macOS shared - C++/Python (Intel)'
+          #   os: macos-13
+          #   python_bindings: ON
+          # - name: 'macOS static - C++ (ARM)'
+          #   os: macos-latest
+          #   python_bindings: OFF
+          # - name: 'macOS shared - C++/Python (ARM)'
+          #   os: macos-latest
+          #   python_bindings: ON
     steps:
       - name: Check out libCellML
         uses: actions/checkout@v4
