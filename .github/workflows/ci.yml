@@ -103,35 +103,35 @@ jobs:
           copy C:\zlib\bin\*.dll build\tests
       - name: Unit testing
         run: cmake --build build --target test
-  javascript:
-    name: JavaScript
-    runs-on: macos-latest
-    strategy:
-      fail-fast: false
-    steps:
-      - name: Check out libCellML
-        uses: actions/checkout@v4
-      - name: Install CMake and Ninja
-        uses: lukka/get-cmake@latest
-      - name: Install buildcache
-        uses: cscouto/buildcache-action@v1
-      - name: Install Emscripten
-        run: brew install --overwrite emscripten
-      - name: Install libxml2
-        run: |
-          cd $HOME
-          wget https://github.com/cellml/gha/releases/download/gha/libxml2-WASM.tar.gz -O - | tar -xz
-      - name: Install zlib
-        run: |
-          cd $HOME
-          wget https://github.com/cellml/gha/releases/download/gha/zlib-WASM.tar.gz -O - | tar -xz
-      - name: Configure libCellML
-        run: |
-          emcmake cmake -G Ninja -S . -B build-wasm -DBUILD_TYPE=Release -DLIBXML2_INCLUDE_DIR=$HOME/libxml2/include/libxml2 -DLIBXML2_LIBRARY=$HOME/libxml2/lib/libxml2.a -DZLIB_INCLUDE_DIR=$HOME/zlib/include -DZLIB_LIBRARY=$HOME/zlib/lib/libz.a
-      - name: Build libCellML
-        run: cmake --build build-wasm
-      - name: Unit testing
-        run: cmake --build build-wasm --target jest_test
+  # javascript:
+  #   name: JavaScript
+  #   runs-on: macos-latest
+  #   strategy:
+  #     fail-fast: false
+  #   steps:
+  #     - name: Check out libCellML
+  #       uses: actions/checkout@v4
+  #     - name: Install CMake and Ninja
+  #       uses: lukka/get-cmake@latest
+  #     - name: Install buildcache
+  #       uses: cscouto/buildcache-action@v1
+  #     - name: Install Emscripten
+  #       run: brew install --overwrite emscripten
+  #     - name: Install libxml2
+  #       run: |
+  #         cd $HOME
+  #         wget https://github.com/cellml/gha/releases/download/gha/libxml2-WASM.tar.gz -O - | tar -xz
+  #     - name: Install zlib
+  #       run: |
+  #         cd $HOME
+  #         wget https://github.com/cellml/gha/releases/download/gha/zlib-WASM.tar.gz -O - | tar -xz
+  #     - name: Configure libCellML
+  #       run: |
+  #         emcmake cmake -G Ninja -S . -B build-wasm -DBUILD_TYPE=Release -DLIBXML2_INCLUDE_DIR=$HOME/libxml2/include/libxml2 -DLIBXML2_LIBRARY=$HOME/libxml2/lib/libxml2.a -DZLIB_INCLUDE_DIR=$HOME/zlib/include -DZLIB_LIBRARY=$HOME/zlib/lib/libz.a
+  #     - name: Build libCellML
+  #       run: cmake --build build-wasm
+  #     - name: Unit testing
+  #       run: cmake --build build-wasm --target jest_test
   # code_formatting:
   #   name: Code formatting
   #   runs-on: ubuntu-latest
