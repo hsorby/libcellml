@@ -89,6 +89,7 @@ jobs:
           ls zlib\lib\cmake
           echo "zlib\lib\cmake\ZLIB-1.2.12"
           ls zlib\lib\cmake\ZLIB-1.2.12
+          cat "zlib\lib\cmake\ZLIB-1.2.12\zlib-config.cmake"
       - name: Install SWIG (macOS only and if needed)
         if: ${{ runner.os == 'macOS' && matrix.python_bindings == 'ON' }}
         run: brew install swig
