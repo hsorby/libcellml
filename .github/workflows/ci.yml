@@ -79,11 +79,11 @@ jobs:
         run: cmake -G Ninja -S . -B build -DBINDINGS_PYTHON=${{ matrix.python_bindings }} -DBUILD_SHARED=${{ matrix.python_bindings }} -DCOVERAGE=OFF -DLLVM_COVERAGE=OFF -DMEMCHECK=OFF -DUNIT_TESTS=ON ${{ matrix.additional_cmake_options }}
       - name: Build libCellML
         run: cmake --build build
-      - name: Getting ready for unit testing (Windows only)
-        if: ${{ runner.os == 'Windows' }}
-        run: |
-          copy C:\libxml2\bin\*.dll build\tests
-          copy C:\zlib\bin\*.dll build\tests
+      # - name: Getting ready for unit testing (Windows only)
+      #   if: ${{ runner.os == 'Windows' }}
+      #   run: |
+      #     copy C:\libxml2\bin\*.dll build\tests
+      #     copy C:\zlib\bin\*.dll build\tests
       - name: Unit testing
         run: cmake --build build --target test
   # javascript:
