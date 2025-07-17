@@ -64,12 +64,14 @@ jobs:
         if: ${{ runner.os == 'Windows' }}
         run: |
           cd C:\
-          wget https://github.com/cellml/gha/releases/download/gha/libxml2-Windows.tar.gz -O - | tar -xz
+          curl -L https://github.com/cellml/gha/releases/download/gha/libxml2-Windows.tar.gz -o libxml2.tar.gz -s
+          tar -xzf libxml2.tar.gz
       - name: Install zlib (Windows only)
         if: ${{ runner.os == 'Windows' }}
         run: |
           cd C:\
-          wget https://github.com/cellml/gha/releases/download/gha/zlib-Windows.tar.gz -O - | tar -xz
+          curl -L https://github.com/cellml/gha/releases/download/gha/zlib-Windows.tar.gz -o zlib.tar.gz -s
+          tar -xzf zlib.tar.gz
       - name: Install SWIG (macOS only and if needed)
         if: ${{ runner.os == 'macOS' && matrix.python_bindings == 'ON' }}
         run: brew install swig
