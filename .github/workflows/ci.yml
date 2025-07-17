@@ -25,24 +25,24 @@ jobs:
             os: windows-latest
             python_bindings: ON
             additional_cmake_options: -DLibXml2_DIR="C:\libxml2\libxml2-2.9.10\CMake" -DZLIB_DIR="C:\zlib\lib\cmake\ZLIB-1.2.12"
-          # - name: 'Linux static - C++'
-          #   os: ubuntu-latest
-          #   python_bindings: OFF
-          # - name: 'Linux shared - C++/Python'
-          #   os: ubuntu-latest
-          #   python_bindings: ON
-          # - name: 'macOS static - C++ (Intel)'
-          #   os: macos-13
-          #   python_bindings: OFF
-          # - name: 'macOS shared - C++/Python (Intel)'
-          #   os: macos-13
-          #   python_bindings: ON
-          # - name: 'macOS static - C++ (ARM)'
-          #   os: macos-latest
-          #   python_bindings: OFF
-          # - name: 'macOS shared - C++/Python (ARM)'
-          #   os: macos-latest
-          #   python_bindings: ON
+          - name: 'Linux static - C++'
+            os: ubuntu-latest
+            python_bindings: OFF
+          - name: 'Linux shared - C++/Python'
+            os: ubuntu-latest
+            python_bindings: ON
+          - name: 'macOS static - C++ (Intel)'
+            os: macos-13
+            python_bindings: OFF
+          - name: 'macOS shared - C++/Python (Intel)'
+            os: macos-13
+            python_bindings: ON
+          - name: 'macOS static - C++ (ARM)'
+            os: macos-latest
+            python_bindings: OFF
+          - name: 'macOS shared - C++/Python (ARM)'
+            os: macos-latest
+            python_bindings: ON
     steps:
       - name: Check out libCellML
         uses: actions/checkout@v4
@@ -64,14 +64,12 @@ jobs:
         if: ${{ runner.os == 'Windows' }}
         run: |
           cd C:\
-          curl -L https://github.com/cellml/gha/releases/download/gha/libxml2-Windows.tar.gz -o libxml2.tar.gz -s
-          tar -xzf libxml2.tar.gz
+          wget https://github.com/cellml/gha/releases/download/gha/libxml2-Windows.tar.gz -O - | tar -xz
       - name: Install zlib (Windows only)
         if: ${{ runner.os == 'Windows' }}
         run: |
           cd C:\
-          curl -L https://github.com/cellml/gha/releases/download/gha/zlib-Windows.tar.gz -o zlib.tar.gz -s
-          tar -xzf zlib.tar.gz
+          wget https://github.com/cellml/gha/releases/download/gha/zlib-Windows.tar.gz -O - | tar -xz
       - name: Install SWIG (macOS only and if needed)
         if: ${{ runner.os == 'macOS' && matrix.python_bindings == 'ON' }}
         run: brew install swig
@@ -79,11 +77,6 @@ jobs:
         run: cmake -G Ninja -S . -B build -DBINDINGS_PYTHON=${{ matrix.python_bindings }} -DBUILD_SHARED=${{ matrix.python_bindings }} -DCOVERAGE=OFF -DLLVM_COVERAGE=OFF -DMEMCHECK=OFF -DUNIT_TESTS=ON ${{ matrix.additional_cmake_options }}
       - name: Build libCellML
         run: cmake --build build
-      # - name: Getting ready for unit testing (Windows only)
-      #   if: ${{ runner.os == 'Windows' }}
-      #   run: |
-      #     copy C:\libxml2\bin\*.dll build\tests
-      #     copy C:\zlib\bin\*.dll build\tests
       - name: Unit testing
         run: cmake --build build --target test
   # javascript:
