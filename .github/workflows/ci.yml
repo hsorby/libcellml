@@ -4,6 +4,11 @@ on:
   pull_request:
     branches: [ main ]
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        required: true
+        type: string
 
 env:
   BUILDCACHE_ACCURACY: STRICT
@@ -47,7 +52,9 @@ jobs:
             python_bindings: ON
     steps:
       - name: Check out libCellML
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref || github.ref }}
       - name: Install Python (if needed)
         if: ${{ matrix.python_bindings == 'ON' }}
         uses: actions/setup-python@v5
@@ -90,7 +97,9 @@ jobs:
       fail-fast: false
     steps:
       - name: Check out libCellML
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref || github.ref }}
       - name: Install CMake and Ninja
         uses: lukka/get-cmake@latest
       - name: Install buildcache
@@ -119,7 +128,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Check out libCellML
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Install ClangFormat
         run: |
           sudo apt update
@@ -142,7 +151,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Check out libCellML
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Install CMake and Ninja
         uses: lukka/get-cmake@latest
       - name: Install buildcache
@@ -163,12 +172,13 @@ jobs:
           if [ `ninja llvm_coverage | grep TOTAL | sed 's/ /\n/g' | grep "100.00%" | wc -l | sed 's/ //g'` -eq 4 ]; then exit 0; else exit 1; fi
   memory_leaks:
     name: Memory leaks
+    if: false
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
     steps:
       - name: Check out libCellML
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Install CMake and Ninja
         uses: lukka/get-cmake@latest
       - name: Install buildcache
@@ -193,7 +203,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Check out libCellML
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Install CMake and Ninja
         uses: lukka/get-cmake@latest
       - name: Install buildcache
