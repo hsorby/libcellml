@@ -1,4 +1,4 @@
-name: libcellml-deploy-on-release
+name: Deploy libCellML on Release
 
 on:
   release:
@@ -63,6 +63,8 @@ jobs:
               set(_ALLOWED_JOBS Wheels)
             elseif(CMAKE_MATCH_2 STREQUAL "Javascript")
               set(_ALLOWED_JOBS Javascript)
+            elseif(CMAKE_MATCH_2 STREQUAL "Julia")
+              set(_ALLOWED_JOBS Julia)
             endif()
           endforeach()
         endif()
@@ -97,12 +99,12 @@ jobs:
 
     steps:
     - name: Checkout libCellML
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         ref: ${{ github.event.release.tag_name }}
 
     - name: Checkout zlib
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       if: runner.os == 'Windows'
       with:
         repository: CMLibs-Dependencies/zlib
@@ -110,7 +112,7 @@ jobs:
         ref: v1.2.12
 
     - name: Checkout LibXml2
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       if: runner.os == 'Windows'
       with:
         repository: CMLibs-Dependencies/libxml2
@@ -118,7 +120,7 @@ jobs:
         ref: v2.9.10
 
     - name: Add msbuild to PATH
-      uses: microsoft/setup-msbuild@v2
+      uses: microsoft/setup-msbuild@v3
       if: runner.os == 'Windows'
 
     - name: Prepare Windows environment
@@ -271,7 +273,7 @@ jobs:
 
     - name: Upload libraries as artifacts
       if: needs.setup-jobs.outputs.binaries-destination == 'Artifact'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         path: ./build/dist/*
         name: ${{ matrix.config.os }}
@@ -302,7 +304,7 @@ jobs:
 
     steps:
       - name: Check out libCellML
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.event.release.tag_name }}
 
@@ -362,7 +364,7 @@ jobs:
           package-dir: src/bindings/python/
 
       - name: Upload Python wheels as artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           path: ./wheelhouse/*.whl
           name: ${{ matrix.name }}-${{ matrix.py }}-wheel
@@ -378,7 +380,7 @@ jobs:
     name: Publish Wheels
     steps:
       - name: Download Python wheel artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: wheelhouse/
           pattern: '*-wheel'
@@ -399,22 +401,22 @@ jobs:
     runs-on: macos-15-intel
     steps:
       - name: Checkout libCellML
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: libcellml
           ref: ${{ github.event.release.tag_name }}
 
       - name: Checkout zlib
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
-          repository: OpenCMISS-Dependencies/zlib
+          repository: CMLibs-Dependencies/zlib
           path: zlib
-          ref: v1.2.3
+          ref: v1.2.12
 
       - name: Checkout LibXml2
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
-          repository: OpenCMISS-Dependencies/libxml2
+          repository: CMLibs-Dependencies/libxml2
           path: libxml2
           ref: v2.9.10
 
@@ -458,7 +460,7 @@ jobs:
 
       - name: Upload libcellml.js as artifacts
         if: needs.setup-jobs.outputs.binaries-destination == 'Artifact'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           path: ${{ steps.package-javascript.outputs.files }}
           name: libcellml.js
@@ -470,3 +472,85 @@ jobs:
         with:
           token: ${{ secrets.NPM_TOKEN }}
           package: build-libcellml-release/src/bindings/javascript
+
+  julia:
+    needs: setup-jobs
+    if: needs.setup-jobs.outputs.allowed-jobs == 'Julia' || needs.setup-jobs.outputs.allowed-jobs == 'All'
+    name: Julia
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Generate GitHub App token
+        id: app_token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.RELEASE_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_PRIVATE_KEY }}
+
+      - name: Checkout Yggdrasil
+        uses: actions/checkout@v6
+        with:
+          repository: cellml/Yggdrasil
+          token: ${{ steps.app_token.outputs.token }}
+          path: yggdrasil
+
+      - name: Create branch
+        run: |
+          cd yggdrasil
+          branch="libcellml-${{ github.event.release.tag_name }}"
+          git checkout -b "$branch"
+
+          echo "branch=$branch" >> "$GITHUB_ENV"
+
+      - name: Update build_tarballs.jl
+        run: |
+          cd yggdrasil/L/libcellml
+
+          version="${${{ github.event.release.tag_name }}#v}"
+          sha="${{ needs.make_release.outputs.release_sha }}"
+
+          echo "${{ github.event.release }}"
+          echo "---------"
+          echo "$version"
+          echo "$sha"
+
+          # Update version line
+          sed -i.bak -E "s/^version = v\"[^\"]+\"/version = v\"$version\"/" build_tarballs.jl
+
+          # Update GitSource hash
+          sed -i.bak -E "s#(\"https://github.com/cellml/libcellml\",\s*\")[^\"]+(\"\))#\1$sha\2#" build_tarballs.jl
+
+          rm build_tarballs.jl.bak
+
+          git diff
+
+      - name: Commit changes
+        run: |
+          cd yggdrasil
+
+          git config user.name "libcellml-release-app"
+          git config user.email "actions@github.com"
+
+          git add L/libcellml/build_tarballs.jl
+          git commit -m "libcellml ${{ github.event.release.tag_name }}"
+
+      - name: Push branch
+        run: |
+          cd yggdrasil
+
+          git push origin "$branch"
+
+      - name: Create PR
+        env:
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
+        run: |
+          cd yggdrasil
+
+          kjdfljdifj
+
+          gh pr create \
+            --repo cellml/Yggdrasil \
+            --head "$branch" \
+            --base master \
+            --title "libcellml ${{ github.event.release.tag_name }}" \
+            --body "Automated update for libCellML release ${{ github.event.release.tag_name }}."
