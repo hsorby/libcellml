@@ -201,7 +201,7 @@ else()
   target_include_directories(cellml PUBLIC ${ZLIB_INCLUDE_DIRS})
 endif()
 
-apply_libxml2_settings(cellml)
+target_link_libraries(cellml PUBLIC LibXml2::LibXml2)
 
 # Use target compile features to propagate features to consuming projects.
 target_compile_features(cellml PUBLIC cxx_std_20)
@@ -237,7 +237,7 @@ target_include_directories(cellml_debug_utilities
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/api>
 )
 
-apply_libxml2_settings(cellml_debug_utilities)
+target_link_libraries(cellml_debug_utilities PUBLIC LibXml2::LibXml2)
 
 set_target_properties(cellml_debug_utilities PROPERTIES
   CXX_VISIBILITY_PRESET hidden
@@ -346,10 +346,7 @@ set(LIBCELLML_TARGETS_FILE "${BUILD_TREE_CONFIG_DIR}/libcellml-targets.cmake")
 export(EXPORT libcellml-targets FILE ${LIBCELLML_TARGETS_FILE})
 list(APPEND CLEAN_FILES ${LIBCELLML_TARGETS_FILE})
 
-if(HAVE_LIBXML2_CONFIG)
-  file(TO_CMAKE_PATH ${LibXml2_DIR} _NORMALISED_PATH)
-  set(LIBXML2_CONFIG_MODE_INFORMATION "include(CMakeFindDependencyMacro)\n\nset(LibXml2_DIR \"${_NORMALISED_PATH}\")\nfind_dependency(LibXml2 CONFIG)\n")
-endif()
+set(LIBXML2_CONFIG_MODE_INFORMATION "include(CMakeFindDependencyMacro)\n\nfind_dependency(LibXml2 REQUIRED)\nfind_dependency(ZLIB REQUIRED)\n")
 set(LIBCELLML_CONFIG_CMAKE_FILE "${BUILD_TREE_CONFIG_DIR}/libcellml-config.cmake")
 configure_file("${PROJECT_SOURCE_DIR}/cmake/libcellml-config.cmake"
   ${LIBCELLML_CONFIG_CMAKE_FILE}

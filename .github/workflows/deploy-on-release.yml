@@ -1,6 +1,5 @@
 name: Deploy libCellML on Release
 
-
 on:
   release:
     types:
