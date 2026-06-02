@@ -47,15 +47,15 @@ Miscellaneous
 Contributors
 ------------
 
+.. image:: https://avatars.githubusercontent.com/u/811244?v=4
+   :target: https://github.com/nickerso
+   :height: 32
+   :width: 32
 .. image:: https://avatars.githubusercontent.com/u/602265?v=4
    :target: https://github.com/agarny
    :height: 32
    :width: 32
 .. image:: https://avatars.githubusercontent.com/u/778048?v=4
    :target: https://github.com/hsorby
-   :height: 32
-   :width: 32
-.. image:: https://avatars.githubusercontent.com/u/811244?v=4
-   :target: https://github.com/nickerso
    :height: 32
    :width: 32
