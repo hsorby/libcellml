@@ -23,4 +23,6 @@ limitations under the License.
 TEST(Analyser, unlinkedUnitsInModel)
 {
     std::cerr << "11111111111111111" << std::endl;
+    auto parser = libcellml::Parser::create();
+    std::cerr << "22222222222222222" << std::endl;
 }
