@@ -22,13 +22,16 @@ limitations under the License.
 
 TEST(Analyser, unlinkedUnitsInModel)
 {
+    std::cout << "11111111111111111" << std::endl;
     auto parser = libcellml::Parser::create();
     auto model = parser->parseModel(fileContents("generator/hodgkin_huxley_squid_axon_model_1952/model.cellml"));
+    std::cout << "11111111111111111" << std::endl;
 
     EXPECT_EQ(size_t(0), parser->issueCount());
 
     // When parsing a model all Units are automatically linked.
 
+    std::cout << "11111111111111111" << std::endl;
     EXPECT_FALSE(model->hasUnlinkedUnits());
 
     // When we set a Units units by name we create an unlinked Units. That is,
