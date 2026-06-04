@@ -93,11 +93,14 @@ if(MSVC)
   message(STATUS "- get runtime target directories.")
   get_runtime_dlls_from_target(${LIBXML2_TARGET} TARGET_FILE_DIR LIBXML2_FILE_DIRS)
   get_runtime_dlls_from_target(${ZLIB_TARGET} TARGET_FILE_DIR ZLIB_FILE_DIRS)
-  set(ALL_FILE_DIRS " " ${LIBXML2_FILE_DIRS} ${ZLIB_FILE_DIRS})
+  set(ALL_FILE_DIRS ${LIBXML2_FILE_DIRS} ${ZLIB_FILE_DIRS})
   list(REMOVE_DUPLICATES ALL_FILE_DIRS)
   list(JOIN ALL_FILE_DIRS "\\;" ALL_FILE_DIRS_STRING)
 
+  set(ALL_FILE_DIRS_STRING "\;${ALL_FILE_DIRS_STRING}")
   message(STATUS "ALL_FILE_DIRS: ${ALL_FILE_DIRS}")
+  message(STATUS "ALL_FILE_DIRS_STRING: ${ALL_FILE_DIRS_STRING}")
+
 endif()
 
 # Cycle through all the tests 'included' above
