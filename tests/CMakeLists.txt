@@ -91,6 +91,8 @@ if(MSVC)
   if(LIBXML2_FILE_DIRS)
     set(GEN_EXP_XML2_TARGET_FILE_DIR "\;${LIBXML2_FILE_DIRS}")
   endif()
+  set(GEN_EXP_ZLIB_TARGET_FILE_DIR "")
+  set(GEN_EXP_XML2_TARGET_FILE_DIR "\;$<TARGET_FILE_DIR:LibXml2::LibXml2>\;$<TARGET_FILE_DIR:zlib>")
 endif()
 
 # Cycle through all the tests 'included' above
