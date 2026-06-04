@@ -32,8 +32,8 @@ limitations under the License.
 #include "logger_p.h"
 #include "namespaces.h"
 #include "utilities.h"
-#include "xmldoc.h"
-#include "xmlutils.h"
+//#include "xmldoc.h"
+//#include "xmlutils.h"
 
 namespace libcellml {
 
@@ -404,38 +404,38 @@ void Parser::ParserImpl::loadModel(const ModelPtr &model, const std::string &inp
 
     mParsing20Version = node->isCellml20Element("model");
 
-    auto elementNamespaceMap = traverseTreeForElementNamespaces(node);
+    //auto elementNamespaceMap = traverseTreeForElementNamespaces(node);
     if (mParsing20Version) {
-        for (const auto &e : elementNamespaceMap) {
-            std::string name = e.first;
-            std::string uri = e.second;
-            if ((uri != CELLML_2_0_NS) && (uri != MATHML_NS)) {
-                auto issue = Issue::IssueImpl::create();
-                issue->mPimpl->setDescription("Element '" + name + "' uses namespace '" + uri + "' which does not belong to an allowed namespace. ");
-                issue->mPimpl->setReferenceRule(Issue::ReferenceRule::XML_UNEXPECTED_NAMESPACE);
-                addIssue(issue);
-            }
-        }
+        // for (const auto &e : elementNamespaceMap) {
+        //     std::string name = e.first;
+        //     std::string uri = e.second;
+        //     if ((uri != CELLML_2_0_NS) && (uri != MATHML_NS)) {
+        //         auto issue = Issue::IssueImpl::create();
+        //         issue->mPimpl->setDescription("Element '" + name + "' uses namespace '" + uri + "' which does not belong to an allowed namespace. ");
+        //         issue->mPimpl->setReferenceRule(Issue::ReferenceRule::XML_UNEXPECTED_NAMESPACE);
+        //         addIssue(issue);
+        //     }
+        // }
     }
 
-    auto attributeNamespaceMap = traverseTreeForAttributeNamespaces(node);
+    //auto attributeNamespaceMap = traverseTreeForAttributeNamespaces(node);
     if (mParsing20Version) {
-        for (const auto &e : attributeNamespaceMap) {
-            std::string nodeName = std::get<0>(e);
-            std::string nodeUri = std::get<4>(e);
-            std::string attributeName = std::get<1>(e);
-            std::string uri = std::get<3>(e);
-            if ((nodeName == "cn") && (nodeUri == MATHML_NS) && (attributeName == "units") && (uri == CELLML_2_0_NS)) {
-                // Explicitly allowed attribute namespace prefix.
-            } else if ((nodeName == "import") && (nodeUri == CELLML_2_0_NS) && (attributeName == "href") && (uri == XLINK_NS)) {
-                // Explicitly allowed attribute namespace prefix.
-            } else {
-                auto issue = Issue::IssueImpl::create();
-                issue->mPimpl->setDescription("Element '" + nodeName + "' attribute '" + attributeName + "' has a namespace '" + uri + "' specified.");
-                issue->mPimpl->setReferenceRule(Issue::ReferenceRule::XML_ATTRIBUTE_HAS_NAMESPACE);
-                addIssue(issue);
-            }
-        }
+        // for (const auto &e : attributeNamespaceMap) {
+        //     std::string nodeName = std::get<0>(e);
+        //     std::string nodeUri = std::get<4>(e);
+        //     std::string attributeName = std::get<1>(e);
+        //     std::string uri = std::get<3>(e);
+        //     if ((nodeName == "cn") && (nodeUri == MATHML_NS) && (attributeName == "units") && (uri == CELLML_2_0_NS)) {
+        //         // Explicitly allowed attribute namespace prefix.
+        //     } else if ((nodeName == "import") && (nodeUri == CELLML_2_0_NS) && (attributeName == "href") && (uri == XLINK_NS)) {
+        //         // Explicitly allowed attribute namespace prefix.
+        //     } else {
+        //         auto issue = Issue::IssueImpl::create();
+        //         issue->mPimpl->setDescription("Element '" + nodeName + "' attribute '" + attributeName + "' has a namespace '" + uri + "' specified.");
+        //         issue->mPimpl->setReferenceRule(Issue::ReferenceRule::XML_ATTRIBUTE_HAS_NAMESPACE);
+        //         addIssue(issue);
+        //     }
+        // }
     }
 
     if ((mParser->isStrict() && !mParsing20Version) || !node->isCellmlElement("model")) {
@@ -666,30 +666,30 @@ void Parser::ParserImpl::loadComponent(const ComponentPtr &component, const XmlN
             // If transforming, manipulate the math sub-document CellML namespaces.
             if (mParsing1XVersion) {
                 // Find all attributes using old CellML namespace.
-                auto cellmlAttributes = attributesWithCellml1XNamespace(childNode->firstChild());
+//                auto cellmlAttributes = attributesWithCellml1XNamespace(childNode->firstChild());
 
                 // Remove all old CellML namespace definitions and references.
-                removeCellml1XNamespaces(childNode, true);
+                // removeCellml1XNamespaces(childNode, true);
 
-                if (!cellmlAttributes.empty()) {
-                    // Add CellML 2.0 namespace to MathML element.
-                    childNode->addNamespaceDefinition(CELLML_2_0_NS, "cellml");
+            //     if (!cellmlAttributes.empty()) {
+            //         // Add CellML 2.0 namespace to MathML element.
+            //         childNode->addNamespaceDefinition(CELLML_2_0_NS, "cellml");
 
-                    // Set all attributes that had an old CellML namespace with CellML 2.0 namespace.
-                    for (const auto &cellmlAttribute : cellmlAttributes) {
-                        cellmlAttribute->setNamespacePrefix("cellml");
-                    }
-                }
+            //         // Set all attributes that had an old CellML namespace with CellML 2.0 namespace.
+            //         for (const auto &cellmlAttribute : cellmlAttributes) {
+            //             cellmlAttribute->setNamespacePrefix("cellml");
+            //         }
+            //     }
             }
             // Copy any namespaces that do not feature as a namespace definition
             // of the math node into the math node.
             auto mathElementDefinedNamespaces = childNode->definedNamespaces();
-            auto possiblyUndefinedNamespaces = traverseTreeForUndefinedNamespaces(childNode->firstChild());
-            auto undefinedNamespaces = determineMissingNamespaces(possiblyUndefinedNamespaces, mathElementDefinedNamespaces);
+            // auto possiblyUndefinedNamespaces = traverseTreeForUndefinedNamespaces(childNode->firstChild());
+            // auto undefinedNamespaces = determineMissingNamespaces(possiblyUndefinedNamespaces, mathElementDefinedNamespaces);
             XmlNamespaceMap::const_iterator it;
-            for (it = undefinedNamespaces.begin(); it != undefinedNamespaces.end(); ++it) {
-                childNode->addNamespaceDefinition(it->second, it->first);
-            }
+            // for (it = undefinedNamespaces.begin(); it != undefinedNamespaces.end(); ++it) {
+            //     childNode->addNamespaceDefinition(it->second, it->first);
+            // }
 
             // Append a self contained math XML document to the component.
             std::string math = childNode->convertToString() + "\n";
