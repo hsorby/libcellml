@@ -314,6 +314,7 @@ endfunction()
 
 function(get_runtime_dlls_from_target target target_property out_var)
   set(_result "")
+
   get_target_property(_items ${target} INTERFACE_LINK_LIBRARIES)
   message(STATUS "target: ${target}, items: ${_items}")
   foreach(item IN LISTS _items)
