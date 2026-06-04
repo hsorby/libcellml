@@ -23,6 +23,16 @@ limitations under the License.
 TEST(Analyser, unlinkedUnitsInModel)
 {
     std::cerr << "11111111111111111" << std::endl;
-    auto parser = libcellml::Parser::create();
+    // auto parser = libcellml::Parser::create();
     std::cerr << "22222222222222222" << std::endl;
+}
+
+
+TEST(Version, versionMatch)
+{
+    unsigned int version = libcellml::version();
+    EXPECT_EQ(0x000603U, version);
+
+    std::string versionString = libcellml::versionString();
+    EXPECT_EQ("0.6.3", versionString);
 }
