@@ -82,6 +82,7 @@ set(TESTS_HEADER_FILES ${TEST_UTILS_HDR})
 include(test_resources.cmake)
 
 if(MSVC)
+  message(STATUS "- get runtime target directories.")
   get_runtime_dlls_from_target(${LIBXML2_TARGET} TARGET_FILE_DIR LIBXML2_FILE_DIRS)
   get_runtime_dlls_from_target(${ZLIB_TARGET} TARGET_FILE_DIR ZLIB_FILE_DIRS)
   if(ZLIB_FILE_DIRS)
