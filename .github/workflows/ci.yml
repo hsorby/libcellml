@@ -38,6 +38,7 @@ jobs:
       - name: Configure MSVC (Windows only)
         if: ${{ runner.os == 'Windows' }}
         uses: TheMrMilchmann/setup-msvc-dev@v4
+
       - name: Install libxml2 (Windows only)
         if: ${{ runner.os == 'Windows' }}
         run: |
