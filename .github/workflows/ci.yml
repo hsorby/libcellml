@@ -20,7 +20,7 @@ jobs:
       matrix:
         include:
           - name: 'Windows static - C++'
-            os: windows-latest
+            os: windows-2022
             python_bindings: OFF
             additional_cmake_options: -DLibXml2_DIR="C:\libxml2\libxml2-2.9.10\CMake" -DZLIB_DIR="C:\zlib\lib\cmake\ZLIB-1.2.12"
     steps:
