@@ -320,6 +320,12 @@ jobs:
             echo "Setting macos_archs as: macos_archs='x86_64 arm64'"
             echo "macos_archs=x86_64 arm64" >> $GITHUB_OUTPUT
             echo "macos_deployment_target=14.0" >> $GITHUB_OUTPUT
+          elif [[ "Windows" == "${{ matrix.name }}" ]]; then
+            echo "Setting win_arch as: win_arch=amd64"
+            echo "win_arch=amd64" >> $GITHUB_OUTPUT
+          elif [[ "Windows ARM" == "${{ matrix.name }}" ]]; then
+            echo "Setting win_arch as: win_arch=arm64"
+            echo "win_arch=arm64" >> $GITHUB_OUTPUT
           fi
 
       - name: Configure MSVC (Windows)
@@ -341,7 +347,7 @@ jobs:
           CIBW_BUILD: ${{ steps.setup.outputs.build }}
           CIBW_TEST_SKIP: "*_arm64"
           CIBW_BEFORE_ALL_LINUX: yum install -y libxml2-devel || (apk add libxml2-dev && rm /usr/lib/cmake/libxml2/libxml2-config.cmake)
-          CIBW_BEFORE_BUILD_WINDOWS: cd src/bindings/python && cmake -S wheel_dependencies -B build-wheel_dependencies -G Ninja && cd build-wheel_dependencies && ninja
+          CIBW_BEFORE_BUILD_WINDOWS: call \"%VSINSTALLDIR%\\VC\\Auxiliary\\Build\\vcvarsall.bat\" ${{ steps.setup.outputs.win_arch }} && cd src/bindings/python && cmake -S wheel_dependencies -B build-wheel_dependencies -G Ninja && cd build-wheel_dependencies && ninja
           CIBW_ENVIRONMENT: >
             LIBCELLML_VERSION_TAG=${{ steps.setup.outputs.tag }}
             MACOSX_DEPLOYMENT_TARGET=${{ steps.setup.outputs.macos_deployment_target }}
