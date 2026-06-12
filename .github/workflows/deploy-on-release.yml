@@ -280,15 +280,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-15-intel, ubuntu-24.04, windows-2025]
-        py: ['3.9', '3.10', '3.11', '3.12', '3.13']
+        os: [macos-15, ubuntu-24.04, ubuntu-24.04-arm, windows-2022, windows-11-arm]
+        py: ['3.11']
         include:
           - name: 'Windows'
-            os: windows-2025
+            os: windows-2022
+          - name: 'Windows ARM'
+            os: windows-11-arm
           - name: 'Linux'
+            os: ubuntu-24.04-arm
+          - name: 'Linux ARM'
             os: ubuntu-24.04
           - name: 'macOS'
-            os: macos-15-intel
+            os: macos-15
         exclude:
           - os: ubuntu-24.04
             py: '3.9'
@@ -313,11 +317,8 @@ jobs:
           echo "build=cp${v/./}-*" >> $GITHUB_OUTPUT
           if [[ "macOS" == "${{ matrix.name }}" ]]; then
             echo "Setting macos_archs as: macos_archs='x86_64 arm64'"
-            echo 'macos_archs=x86_64 arm64' >> $GITHUB_OUTPUT
-            echo "macos_deployment_target=15.0" >> $GITHUB_OUTPUT
-          else
-            echo "Setting macos_archs as: macos_archs='x86_64'"
-            echo "macos_archs=x86_64" >> $GITHUB_OUTPUT
+            echo "macos_archs=x86_64 arm64" >> $GITHUB_OUTPUT
+            echo "macos_deployment_target=14.0" >> $GITHUB_OUTPUT
           fi
 
       - name: Configure MSVC (Windows)
