@@ -1,6 +1,7 @@
 name: Deploy libCellML on Release
 
 on:
+  push:
   release:
     types:
       - created
@@ -73,7 +74,7 @@ jobs:
 
   os-binaries:
     needs: setup-jobs
-    if: needs.setup-jobs.outputs.allowed-jobs == 'Installers' || needs.setup-jobs.outputs.allowed-jobs == 'All'
+    if: false
     name: ${{ matrix.config.name }}
     runs-on: ${{ matrix.config.os }}
     strategy:
@@ -359,7 +360,7 @@ jobs:
           retention-days: ${{ env.ARTIFACT_RETENTION_DAYS }}
 
   publish-wheels:
-    if: needs.setup-jobs.outputs.binaries-destination == 'Publish'
+    if: false
     needs: wheels
     runs-on: ubuntu-22.04
     timeout-minutes: 5  # Docker+network are slow sometimes.
@@ -384,7 +385,7 @@ jobs:
 
   emscripten:
     needs: setup-jobs
-    if: needs.setup-jobs.outputs.allowed-jobs == 'Javascript' || needs.setup-jobs.outputs.allowed-jobs == 'All'
+    if: false
     name: libcellml.js
     runs-on: macos-15-intel
     steps:
@@ -463,7 +464,7 @@ jobs:
 
   julia:
     needs: setup-jobs
-    if: needs.setup-jobs.outputs.allowed-jobs == 'Julia' || needs.setup-jobs.outputs.allowed-jobs == 'All'
+    if: false
     name: Julia
     runs-on: ubuntu-latest
     steps:
