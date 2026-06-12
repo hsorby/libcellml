@@ -308,10 +308,10 @@ jobs:
         id: setup
         shell: bash
         run: |
-          ls "%VSINSTALLDIR%"
-          ls "%VSINSTALLDIR%/VC"
-          ls "%VSINSTALLDIR%/VC/Auxiliary"
-          ls "%VSINSTALLDIR%/VC/Auxiliary/Build"
+          ls "$VSINSTALLDIR" || true
+          ls "${VSINSTALLDIR}/VC" || true
+          ls "${VSINSTALLDIR}/VC/Auxiliary" || true
+          ls "${VSINSTALLDIR}/VC/Auxiliary/Build" || true
           mkdir src/bindings/python/libcellml
           cp src/bindings/python/README.rst src/bindings/python/libcellml/README.rst
           mv src/bindings/python/cibuildwheel.setup.py src/bindings/python/setup.py
