@@ -282,7 +282,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [macos-15, ubuntu-24.04, ubuntu-24.04-arm, windows-2022, windows-11-arm]
-        py: ['3.11']
+        py: ['3.9', '3.10', '3.11', '3.12', '3.13']
         include:
           - name: 'Windows'
             os: windows-2022
@@ -297,6 +297,8 @@ jobs:
         exclude:
           - os: ubuntu-24.04
             py: '3.9'
+          - os: ubuntu-24.04-arm
+            py: '3.9'
 
     steps:
       - name: Check out libCellML
@@ -308,10 +310,6 @@ jobs:
         id: setup
         shell: bash
         run: |
-          ls "$VSINSTALLDIR" || true
-          ls "${VSINSTALLDIR}/VC" || true
-          ls "${VSINSTALLDIR}/VC/Auxiliary" || true
-          ls "${VSINSTALLDIR}/VC/Auxiliary/Build" || true
           mkdir src/bindings/python/libcellml
           cp src/bindings/python/README.rst src/bindings/python/libcellml/README.rst
           mv src/bindings/python/cibuildwheel.setup.py src/bindings/python/setup.py
