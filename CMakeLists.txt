@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.18.0)
+cmake_minimum_required(VERSION 3.26.0)
 
 if(APPLE)
   set(CMAKE_OSX_DEPLOYMENT_TARGET 14.0 CACHE STRING "Minimum OS X deployment version.")
@@ -31,6 +31,29 @@ foreach(NEW_POLICY ${NEW_POLICIES})
     cmake_policy(SET ${NEW_POLICY} NEW)
   endif()
 endforeach()
+
+
+message(STATUS "----------------------------------------------")
+message(STATUS "SKBUILD: ${SKBUILD}")
+message(STATUS "Environment Variables: ${ENV}")
+get_cmake_property(_vars VARIABLES)
+foreach(_v ${_vars})
+  if(_v MATCHES "^Python")
+    message(STATUS "${_v}=${${_v}}")
+  endif()
+endforeach()
+foreach(_v Interpreter Module SABIModule Python NumPy)
+  if (TARGET Python::${_v})
+    message(STATUS "Python::${_v}=${Python::${_v}}")
+  endif()
+endforeach()
+
+message(STATUS "Python_EXECUTABLE=${Python_EXECUTABLE}")
+message(STATUS "Python_INCLUDE_DIRS=${Python_INCLUDE_DIRS}")
+message(STATUS "Python_SABI_LIBRARIES=${Python_SABI_LIBRARIES}")
+
+message(STATUS "--------------------- 123 -------------------------")
+
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
