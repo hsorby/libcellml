@@ -83,12 +83,6 @@ if(MSVC)
   list(APPEND FINALISE_PYTHON_BINDINGS_ARGUMENTS -DTARGET_FILE_NAME_libxml2=${LIBXML2_DLL_NAMES})
 endif()
 
-# if(FIND_PYTHON_DEVELOPMENT_MODULE)
-#   set(_PYTHON_LINK_TARGET Python::Module)
-# else()
-#   set(_PYTHON_LINK_TARGET Python::Python)
-# endif()
-
 set(SWIG_PYTHON_BINDINGS_TARGETS)
 # Create bindings for each interface file
 foreach(SWIG_INTERFACE_SRC ${SWIG_INTERFACE_SRCS})
