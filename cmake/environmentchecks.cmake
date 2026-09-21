@@ -161,7 +161,7 @@ if(SWIG_EXECUTABLE)
   set(BINDINGS_AVAILABLE TRUE CACHE INTERNAL "Executable required to generate bindings is available.")
 endif()
 
-if(BINDINGS_AVAILABLE AND (Python_Development.SABIModule_FOUND OR Python_Development_FOUND))
+if(BINDINGS_AVAILABLE AND (Python_Development.SABIModule_FOUND OR Python_Development.Module_FOUND))
   set(PYTHON_BINDINGS_AVAILABLE TRUE CACHE INTERNAL "Requirements for creating Python bindings are available.")
 endif()
 
