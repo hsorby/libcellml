@@ -3486,3 +3486,22 @@ TEST(Units, oneLitreEqualToOneThousandCentiMetreCubedAllCubed)
 
     EXPECT_TRUE(libcellml::Units::equivalent(oneLitreCubed, oneThousandCentiMetreCubedCubed));
 }
+
+TEST(BugFixingUnits, multiplierOfUnitToExponent)
+{
+    libcellml::ParserPtr p = libcellml::Parser::create();
+    auto m = p->parseModel(fileContents("units_exponent.cellml"));
+
+    EXPECT_EQ(size_t(0), p->issueCount());
+
+    auto v = libcellml::Validator::create();
+    v->validateModel(m);
+
+    EXPECT_EQ(size_t(0), v->issueCount());
+
+    auto a = libcellml::Analyser::create();
+    a->analyseModel(m);
+
+    Debug() << a->issue(0)->description();
+    EXPECT_EQ(size_t(0), a->issueCount());
+ }
