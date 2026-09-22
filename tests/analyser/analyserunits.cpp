@@ -764,10 +764,10 @@ TEST(AnalyserUnits, complexUnits)
     EXPECT_EQ(size_t(0), parser->issueCount());
 
     const std::vector<std::string> expectedIssues = {
-        "The units in 'a = 1.0' in component 'main' are not equivalent. 'a' is in 'apple' (i.e. '10^-27 x second^3') while '1.0' is in 'orange' (i.e. '10^-9 x second^7').",
-        "The units in 'b = 1.0/1.0' in component 'main' are not equivalent. 'b' is in 'apple' (i.e. '10^-27 x second^3') while '1.0/1.0' is in 'orange x second_2^-1' (i.e. '10^-9 x second^5').",
-        "The units in 'c = 1.0/(1.0/1.0)' in component 'main' are not equivalent. 'c' is in 'apple' (i.e. '10^-27 x second^3') while '1.0/(1.0/1.0)' is in 'atto_second x orange x second_2^-1' (i.e. '10^-27 x second^6').",
-        "The units in 'd = 1.0/(1.0/1.0)/1.0' in component 'main' are not equivalent. 'd' is in 'apple' (i.e. '10^-27 x second^3') while '1.0/(1.0/1.0)/1.0' is in 'atto_second x orange x second_2^-2' (i.e. '10^-27 x second^4').",
+        "The units in 'a = 1.0' in component 'main' are not equivalent. 'a' is in 'apple' (i.e. '10^-21 x second^3') while '1.0' is in 'orange' (i.e. '10^-9 x second^7').",
+        "The units in 'b = 1.0/1.0' in component 'main' are not equivalent. 'b' is in 'apple' (i.e. '10^-21 x second^3') while '1.0/1.0' is in 'orange x second_2^-1' (i.e. '10^-9 x second^5').",
+        "The units in 'c = 1.0/(1.0/1.0)' in component 'main' are not equivalent. 'c' is in 'apple' (i.e. '10^-21 x second^3') while '1.0/(1.0/1.0)' is in 'atto_second x orange x second_2^-1' (i.e. '10^-27 x second^6').",
+        "The units in 'd = 1.0/(1.0/1.0)/1.0' in component 'main' are not equivalent. 'd' is in 'apple' (i.e. '10^-21 x second^3') while '1.0/(1.0/1.0)/1.0' is in 'atto_second x orange x second_2^-2' (i.e. '10^-27 x second^4').",
     };
 
     auto analyser = libcellml::Analyser::create();
