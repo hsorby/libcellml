@@ -36,7 +36,6 @@ TEST(GeneratorUnaryMinus, example01)
 
     auto implementationCode = generator->implementationCode(analyser->analyserModel());
 
-
     EXPECT_TRUE(implementationCode.find("rates[0] = -(-1.0);\n") != std::string::npos);
 }
 
@@ -56,7 +55,6 @@ TEST(GeneratorUnaryMinus, example02)
     auto generator = libcellml::Generator::create();
 
     auto implementationCode = generator->implementationCode(analyser->analyserModel());
-
 
     EXPECT_TRUE(implementationCode.find("rates[0] = -(-2.0)*constants[0];\n") != std::string::npos);
 }
@@ -78,7 +76,6 @@ TEST(GeneratorUnaryMinus, example03)
 
     auto implementationCode = generator->implementationCode(analyser->analyserModel());
 
-
     EXPECT_TRUE(implementationCode.find("rates[0] = -(-constants[1])/constants[0];\n") != std::string::npos);
 }
 
@@ -99,7 +96,6 @@ TEST(GeneratorUnaryMinus, example04)
 
     auto implementationCode = generator->implementationCode(analyser->analyserModel());
 
-
     EXPECT_TRUE(implementationCode.find("rates[0] = -(-1.0);\n") != std::string::npos);
 }
 
@@ -119,7 +115,6 @@ TEST(GeneratorUnaryMinus, example05)
     auto generator = libcellml::Generator::create();
 
     auto implementationCode = generator->implementationCode(analyser->analyserModel());
-
 
     EXPECT_TRUE(implementationCode.find("rates[0] = -(-constants[1]+constants[0]);\n") != std::string::npos);
 }
