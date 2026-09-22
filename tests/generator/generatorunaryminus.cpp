@@ -118,3 +118,43 @@ TEST(GeneratorUnaryMinus, example05)
 
     EXPECT_TRUE(implementationCode.find("rates[0] = -(-constants[1]+constants[0]);\n") != std::string::npos);
 }
+
+TEST(GeneratorUnaryMinus, example06)
+{
+    // rates[0] = -pow(-constants[1], constants[0]);
+    auto parser = libcellml::Parser::create();
+    auto model = parser->parseModel(fileContents("generator/unary_minus/example_06.cellml"));
+
+    EXPECT_NE(nullptr, model);
+
+    auto analyser = libcellml::Analyser::create();
+    analyser->analyseModel(model);
+
+    EXPECT_EQ(size_t(0), analyser->issueCount());
+
+    auto generator = libcellml::Generator::create();
+
+    auto implementationCode = generator->implementationCode(analyser->analyserModel());
+
+    EXPECT_TRUE(implementationCode.find("rates[0] = -pow(-constants[1], constants[0]);\n") != std::string::npos);
+}
+
+TEST(GeneratorUnaryMinus, example07)
+{
+    // rates[0] = constants[1]-(-constants[0]);
+    auto parser = libcellml::Parser::create();
+    auto model = parser->parseModel(fileContents("generator/unary_minus/example_07.cellml"));
+
+    EXPECT_NE(nullptr, model);
+
+    auto analyser = libcellml::Analyser::create();
+    analyser->analyseModel(model);
+
+    EXPECT_EQ(size_t(0), analyser->issueCount());
+
+    auto generator = libcellml::Generator::create();
+
+    auto implementationCode = generator->implementationCode(analyser->analyserModel());
+
+    EXPECT_TRUE(implementationCode.find("rates[0] = constants[1]-(-constants[0]);\n") != std::string::npos);
+}
