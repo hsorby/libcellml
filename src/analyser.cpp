@@ -1398,7 +1398,7 @@ void Analyser::AnalyserImpl::updateUnitsMultiplier(const ModelPtr &model,
                 units->unitAttributes(i, reference, prefix, exponent, multiplier, id);
 
                 if (isStandardUnitName(reference)) {
-                    newUnitsMultiplier += unitsMultiplier + (standardMultiplierList.at(reference) + std::log10(multiplier) + convertPrefixToInt(prefix)) * exponent * unitsExponent;
+                    newUnitsMultiplier += unitsMultiplier + (std::log10(multiplier) + (standardMultiplierList.at(reference) + convertPrefixToInt(prefix)) * exponent) * unitsExponent;
                 } else {
                     updateUnitsMultiplier(model, reference, newUnitsMultiplier,
                                           exponent * unitsExponent,
