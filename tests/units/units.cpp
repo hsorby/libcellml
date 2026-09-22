@@ -3503,10 +3503,10 @@ TEST(BugFixingUnits, multiplierOfUnitToExponent)
     a->analyseModel(m);
 
     EXPECT_EQ(size_t(0), a->issueCount());
- }
+}
 
 TEST(BugFixingUnits, nonStandardUnitsExponent)
- {
+{
     auto model = libcellml::Model::create();
     auto nonStandardKilometre = libcellml::Units::create("b");
     nonStandardKilometre->addUnit("metre", libcellml::Units::Prefix::KILO);
@@ -3523,4 +3523,4 @@ TEST(BugFixingUnits, nonStandardUnitsExponent)
     model->addUnits(oneMillionSquareMetres);
 
     EXPECT_TRUE(libcellml::Units::equivalent(squareNonStandardKilometre, oneMillionSquareMetres));
- }
+}
