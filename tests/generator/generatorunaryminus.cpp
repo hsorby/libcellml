@@ -56,7 +56,7 @@ TEST(GeneratorUnaryMinus, example02)
 
     auto implementationCode = generator->implementationCode(analyser->analyserModel());
 
-    EXPECT_TRUE(implementationCode.find("rates[0] = -(-2.0)*constants[0];\n") != std::string::npos);
+    EXPECT_TRUE(implementationCode.find("rates[0] = -(-2.0*constants[0]);\n") != std::string::npos);
 }
 
 TEST(GeneratorUnaryMinus, example03)
@@ -76,7 +76,7 @@ TEST(GeneratorUnaryMinus, example03)
 
     auto implementationCode = generator->implementationCode(analyser->analyserModel());
 
-    EXPECT_TRUE(implementationCode.find("rates[0] = -(-constants[1])/constants[0];\n") != std::string::npos);
+    EXPECT_TRUE(implementationCode.find("rates[0] = -(-constants[1]/constants[0]);\n") != std::string::npos);
 }
 
 TEST(GeneratorUnaryMinus, example04)
