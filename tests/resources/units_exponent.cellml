@@ -5,7 +5,7 @@
   </units>
   <!-- 1/60 second^-1, the multiplier is outside of the exponent -->
   <units name="per_minute">
-    <unit units="second" exponent="-1" multiplier="0.0166666666666667"/>
+    <unit units="second" exponent="-1" multiplier="0.01666666666666667"/>
   </units>
   <!-- the same units, by reference -->
   <units name="per_minute_by_reference">
