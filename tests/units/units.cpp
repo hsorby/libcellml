@@ -1208,16 +1208,16 @@ TEST(Units, dimensionlessScalingFactor)
     m->addUnits(u5);
     m->addUnits(u6);
 
-    EXPECT_EQ(1.0, libcellml::Units::scalingFactor(u1, u2));
-    EXPECT_EQ(1.0, libcellml::Units::scalingFactor(u2, u1));
-    EXPECT_EQ(1.0, libcellml::Units::scalingFactor(u3, u4));
-    EXPECT_EQ(1.0, libcellml::Units::scalingFactor(u4, u3));
+    EXPECT_EQ(1.0e+06, libcellml::Units::scalingFactor(u1, u2));
+    EXPECT_EQ(1.0e-06, libcellml::Units::scalingFactor(u2, u1));
+    EXPECT_EQ(1.0e+06, libcellml::Units::scalingFactor(u3, u4));
+    EXPECT_EQ(1.0e-06, libcellml::Units::scalingFactor(u4, u3));
     EXPECT_EQ(1.0, libcellml::Units::scalingFactor(u1, u3));
     EXPECT_EQ(1.0, libcellml::Units::scalingFactor(u2, u4));
-    EXPECT_EQ(1.0, libcellml::Units::scalingFactor(u1, u4));
-    EXPECT_EQ(1.0, libcellml::Units::scalingFactor(u2, u3));
-    EXPECT_EQ(1.0, libcellml::Units::scalingFactor(u5, u6));
-    EXPECT_EQ(1.0, libcellml::Units::scalingFactor(u6, u5));
+    EXPECT_EQ(1.0e+06, libcellml::Units::scalingFactor(u1, u4));
+    EXPECT_EQ(1.0e-06, libcellml::Units::scalingFactor(u2, u3));
+    EXPECT_EQ(1.0e+06, libcellml::Units::scalingFactor(u5, u6));
+    EXPECT_EQ(1.0e-06, libcellml::Units::scalingFactor(u6, u5));
     EXPECT_EQ(1.0, libcellml::Units::scalingFactor(u1, u5));
 }
 
@@ -1310,8 +1310,8 @@ TEST(Units, complicatedMultiplicationFactorUnits)
     model->addUnits(incredible_pile_of_square_apples);
     model->addUnits(bunch_of_bananas);
 
-    EXPECT_EQ(1.0, libcellml::Units::scalingFactor(u1, u2));
-    EXPECT_EQ(1.0, libcellml::Units::scalingFactor(u3, u4));
+    EXPECT_EQ(1.0e+06, libcellml::Units::scalingFactor(u1, u2));
+    EXPECT_EQ(1.0e-03, libcellml::Units::scalingFactor(u3, u4));
     EXPECT_EQ(1e-08, libcellml::Units::scalingFactor(incredible_pile_of_square_apples, square_apple));
     // Incompatible units so we return a scaling factor of 0.0.
     EXPECT_EQ(0.0, libcellml::Units::scalingFactor(incredible_pile_of_square_apples, bunch_of_bananas));
@@ -3502,6 +3502,25 @@ TEST(BugFixingUnits, multiplierOfUnitToExponent)
     auto a = libcellml::Analyser::create();
     a->analyseModel(m);
 
-    Debug() << a->issue(0)->description();
     EXPECT_EQ(size_t(0), a->issueCount());
+ }
+
+TEST(BugFixingUnits, nonStandardUnitsExponent)
+ {
+    auto model = libcellml::Model::create();
+    auto nonStandardKilometre = libcellml::Units::create("b");
+    nonStandardKilometre->addUnit("metre", libcellml::Units::Prefix::KILO);
+
+    auto squareNonStandardKilometre = libcellml::Units::create("squareNonStandardKiloetre");
+    squareNonStandardKilometre->addUnit("b", 2);
+
+    auto oneMillionSquareMetres = libcellml::Units::create("oneMillionSquareMetres");
+    oneMillionSquareMetres->addUnit("metre", 2.0);
+    oneMillionSquareMetres->addUnit("dimensionless", libcellml::Units::Prefix::MEGA);
+
+    model->addUnits(nonStandardKilometre);
+    model->addUnits(squareNonStandardKilometre);
+    model->addUnits(oneMillionSquareMetres);
+
+    EXPECT_TRUE(libcellml::Units::equivalent(squareNonStandardKilometre, oneMillionSquareMetres));
  }
