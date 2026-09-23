@@ -87,12 +87,12 @@ public:
      *
      * Return the string version of a @ref InterfaceType.
      *
-     * @param type The type for which we want the string version.
+     * @param interfaceType The type for which we want the string version.
      *
      * @return The string version of the @ref InterfaceType.
      */
 
-    static std::string interfaceTypeAsString(InterfaceType type);
+    static std::string interfaceTypeAsString(InterfaceType interfaceType);
 
     /**
      * @brief Add each argument variable to the other's equivalent variable set.

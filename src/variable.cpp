@@ -28,9 +28,9 @@ limitations under the License.
 
 namespace libcellml {
 
-std::string Variable::interfaceTypeAsString(Variable::InterfaceType type)
+std::string Variable::interfaceTypeAsString(Variable::InterfaceType interfaceType)
 {
-    return interfaceTypeToString.at(type);
+    return interfaceTypeToString.at(interfaceType);
 }
 
 std::vector<VariableWeakPtr>::const_iterator Variable::VariableImpl::findEquivalentVariable(const VariablePtr &equivalentVariable) const
