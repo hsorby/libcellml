@@ -1,4 +1,3 @@
-
 # Set the test name, 'test_' will be prepended to the
 # name set here
 set(CURRENT_TEST as_string)
@@ -14,5 +13,3 @@ set(${CURRENT_TEST}_SRCS
 )
 set(${CURRENT_TEST}_HDRS
 )
-
-
