@@ -589,6 +589,23 @@ TEST(Coverage, analyserTypes)
     EXPECT_EQ("algebraic_variable", libcellml::AnalyserVariable::typeAsString(analyserModel->algebraicVariable(0)->type()));
 }
 
+TEST(Coverage, analyserAreEquivalentVariables)
+{
+    auto analyser = libcellml::Analyser::create();
+    auto parser = libcellml::Parser::create();
+    auto model = parser->parseModel(fileContents("generator/hodgkin_huxley_squid_axon_model_1952/model.cellml"));
+
+    analyser->analyseModel(model);
+
+    auto analyserModel = analyser->analyserModel();
+    EXPECT_FALSE(analyserModel->areEquivalentVariables(nullptr, nullptr));
+    auto variable = model->component("membrane")->variable("V");
+    EXPECT_FALSE(analyserModel->areEquivalentVariables(nullptr, variable));
+    EXPECT_FALSE(analyserModel->areEquivalentVariables(variable, nullptr));
+    auto otherVariable = libcellml::Variable::create("other");
+    EXPECT_FALSE(analyserModel->areEquivalentVariables(variable, otherVariable));
+}
+
 void checkAstTypeAsString(const libcellml::AnalyserEquationAstPtr &ast)
 {
     if (ast != nullptr) {

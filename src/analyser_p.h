@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+#include "libcellml/analyser.h"
 #include "libcellml/generatorprofile.h"
 #include "libcellml/issue.h"
 
@@ -160,6 +161,7 @@ public:
     AnalyserExternalVariablePtrs mExternalVariables;
 
     AnalyserInternalVariablePtrs mInternalVariables;
+    std::unordered_map<std::uintptr_t, AnalyserInternalVariablePtr> mInternalVariableMap;
     AnalyserInternalEquationPtrs mInternalEquations;
 
     GeneratorProfilePtr mGeneratorProfile = GeneratorProfile::create();

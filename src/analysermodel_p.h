@@ -18,6 +18,7 @@ limitations under the License.
 
 #include <cstdint>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "libcellml/analysermodel.h"
 
@@ -46,32 +47,7 @@ struct AnalyserModel::AnalyserModelImpl
 
     std::vector<AnalyserEquationPtr> mAnalyserEquations;
 
-    struct VariableKeyPair
-    {
-        uintptr_t first;
-        uintptr_t second;
-
-        bool operator==(const VariableKeyPair &other) const
-        {
-            return (first == other.first) & (second == other.second);
-        }
-    };
-
-    struct VariableKeyPairHash
-    {
-        size_t operator()(const VariableKeyPair &pair) const
-        {
-            // A simple and portable hash function for a pair of pointers.
-
-            size_t hash = pair.first;
-
-            hash ^= pair.second + 0x9e3779b9 + (hash << 6) + (hash >> 2);
-
-            return hash;
-        }
-    };
-
-    std::unordered_map<VariableKeyPair, bool, VariableKeyPairHash> mCachedEquivalentVariables;
+    std::unordered_map<uintptr_t, size_t> mEquivalentVariableCache;
 
     bool mNeedEqFunction = false;
     bool mNeedNeqFunction = false;
@@ -101,6 +77,9 @@ struct AnalyserModel::AnalyserModelImpl
     bool mNeedAcothFunction = false;
 
     static AnalyserModelPtr create(const ModelPtr &model = nullptr);
+
+    void buildEquivalentVariablesCache(const ComponentPtr &component, std::unordered_set<uintptr_t> &visited, size_t &groupCount);
+    void buildEquivalentVariablesCache();
 
     AnalyserModelImpl(const ModelPtr &model);
 };
