@@ -168,12 +168,12 @@ public:
      *
      * Return the string version of a @ref StandardUnit.
      *
-     * @param unit The unit for which we want the string version.
+     * @param standardUnit The unit for which we want the string version.
      *
      * @return The string version of the @ref StandardUnit.
      */
 
-    static std::string standardUnitAsString(StandardUnit unit);
+    static std::string standardUnitAsString(StandardUnit standardUnit);
 
     /**
      * @brief Test to determine if Units is a base unit.
