@@ -283,20 +283,20 @@ jobs:
         os: [macos-15, macos-15-intel, ubuntu-24.04, ubuntu-24.04-arm, windows-2025-vs2026, windows-11-arm]
         py: ['3.14']
         include:
-          - name: 'Linux'
-            os: ubuntu-24.04
           - name: 'LinuxARM'
             os: ubuntu-24.04-arm
-          - name: 'macOS'
+          - name: 'LinuxIntel'
+            os: ubuntu-24.04
+          - name: 'macOSARM'
             os: macos-15
-          - name: 'macOSintel'
+          - name: 'macOSIntel'
             os: macos-15-intel
-          - name: 'Windows'
-            os: windows-2025-vs2026
-            arch: amd64
           - name: 'WindowsARM'
             os: windows-11-arm
             arch: arm64
+          - name: 'WindowsIntel'
+            os: windows-2025-vs2026
+            arch: amd64
 
     steps:
       - name: Check out libCellML
